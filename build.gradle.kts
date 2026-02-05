@@ -10,7 +10,9 @@ repositories {
 }
 
 val hytaleServerInput = (findProperty("hytaleServerJar") as String?)
+    ?: (findProperty("HytaleServerJar") as String?)
     ?: System.getenv("HYTALE_SERVER_JAR")
+    ?: System.getenv("HytaleServerJar")
 
 val hytaleServerJar = hytaleServerInput?.let { input ->
     val path = file(input)
