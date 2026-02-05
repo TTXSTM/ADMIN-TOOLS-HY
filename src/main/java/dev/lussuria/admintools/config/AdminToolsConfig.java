@@ -1,0 +1,255 @@
+package dev.lussuria.admintools.config;
+
+import com.hypixel.hytale.codec.Codec;
+import com.hypixel.hytale.codec.KeyedCodec;
+import com.hypixel.hytale.codec.builder.BuilderCodec;
+
+public final class AdminToolsConfig {
+    public static final BuilderCodec<AdminToolsConfig> CODEC = BuilderCodec.builder(AdminToolsConfig.class, AdminToolsConfig::new)
+        .addField(new KeyedCodec<>("commands", Commands.CODEC), (c, v) -> c.commands = v, c -> c.commands)
+        .addField(new KeyedCodec<>("chat", Chat.CODEC), (c, v) -> c.chat = v, c -> c.chat)
+        .addField(new KeyedCodec<>("joinNotification", JoinNotification.CODEC), (c, v) -> c.joinNotification = v, c -> c.joinNotification)
+        .addField(new KeyedCodec<>("customItem", CustomItem.CODEC), (c, v) -> c.customItem = v, c -> c.customItem)
+        .addField(new KeyedCodec<>("hologram", Hologram.CODEC), (c, v) -> c.hologram = v, c -> c.hologram)
+        .addField(new KeyedCodec<>("ui", Ui.CODEC), (c, v) -> c.ui = v, c -> c.ui)
+        .build();
+
+    public Commands commands = new Commands();
+    public Chat chat = new Chat();
+    public JoinNotification joinNotification = new JoinNotification();
+    public CustomItem customItem = new CustomItem();
+    public Hologram hologram = new Hologram();
+    public Ui ui = new Ui();
+
+    public static final class Commands {
+        public static final BuilderCodec<Commands> CODEC = BuilderCodec.builder(Commands.class, Commands::new)
+            .addField(new KeyedCodec<>("showRoot", ShowRoot.CODEC), (c, v) -> c.showRoot = v, c -> c.showRoot)
+            .addField(new KeyedCodec<>("heal", Heal.CODEC), (c, v) -> c.heal = v, c -> c.heal)
+            .addField(new KeyedCodec<>("showTitle", ShowTitle.CODEC), (c, v) -> c.showTitle = v, c -> c.showTitle)
+            .addField(new KeyedCodec<>("showHologram", ShowHologram.CODEC), (c, v) -> c.showHologram = v, c -> c.showHologram)
+            .addField(new KeyedCodec<>("openUi", OpenUi.CODEC), (c, v) -> c.openUi = v, c -> c.openUi)
+            .build();
+
+        public ShowRoot showRoot = new ShowRoot();
+        public Heal heal = new Heal();
+        public ShowTitle showTitle = new ShowTitle();
+        public ShowHologram showHologram = new ShowHologram();
+        public OpenUi openUi = new OpenUi();
+    }
+
+    public static final class ShowRoot {
+        public static final BuilderCodec<ShowRoot> CODEC = BuilderCodec.builder(ShowRoot.class, ShowRoot::new)
+            .addField(new KeyedCodec<>("enabled", Codec.BOOLEAN), (c, v) -> c.enabled = v, c -> c.enabled)
+            .addField(new KeyedCodec<>("name", Codec.STRING), (c, v) -> c.name = v, c -> c.name)
+            .addField(new KeyedCodec<>("aliases", Codec.STRING_ARRAY), (c, v) -> c.aliases = v, c -> c.aliases)
+            .addField(new KeyedCodec<>("description", Codec.STRING), (c, v) -> c.description = v, c -> c.description)
+            .build();
+
+        public boolean enabled = true;
+        public String name = "show";
+        public String[] aliases = new String[0];
+        public String description = "Show admin visuals.";
+    }
+
+    public static final class Heal {
+        public static final BuilderCodec<Heal> CODEC = BuilderCodec.builder(Heal.class, Heal::new)
+            .addField(new KeyedCodec<>("enabled", Codec.BOOLEAN), (c, v) -> c.enabled = v, c -> c.enabled)
+            .addField(new KeyedCodec<>("name", Codec.STRING), (c, v) -> c.name = v, c -> c.name)
+            .addField(new KeyedCodec<>("aliases", Codec.STRING_ARRAY), (c, v) -> c.aliases = v, c -> c.aliases)
+            .addField(new KeyedCodec<>("description", Codec.STRING), (c, v) -> c.description = v, c -> c.description)
+            .addField(new KeyedCodec<>("permission", Codec.STRING), (c, v) -> c.permission = v, c -> c.permission)
+            .addField(new KeyedCodec<>("statName", Codec.STRING), (c, v) -> c.statName = v, c -> c.statName)
+            .addField(new KeyedCodec<>("message", Codec.STRING), (c, v) -> c.message = v, c -> c.message)
+            .addField(new KeyedCodec<>("messageTarget", Codec.STRING), (c, v) -> c.messageTarget = v, c -> c.messageTarget)
+            .addField(new KeyedCodec<>("sendTargetMessage", Codec.BOOLEAN), (c, v) -> c.sendTargetMessage = v, c -> c.sendTargetMessage)
+            .addField(new KeyedCodec<>("parseMessages", Codec.BOOLEAN), (c, v) -> c.parseMessages = v, c -> c.parseMessages)
+            .build();
+
+        public boolean enabled = true;
+        public String name = "heal";
+        public String[] aliases = new String[0];
+        public String description = "Heal a player.";
+        public String permission = "admintools.command.heal";
+        public String statName = "Health";
+        public String message = "Healed {player}.";
+        public String messageTarget = "You were healed by {sender}.";
+        public boolean sendTargetMessage = true;
+        public boolean parseMessages = true;
+    }
+
+    public static final class ShowTitle {
+        public static final BuilderCodec<ShowTitle> CODEC = BuilderCodec.builder(ShowTitle.class, ShowTitle::new)
+            .addField(new KeyedCodec<>("enabled", Codec.BOOLEAN), (c, v) -> c.enabled = v, c -> c.enabled)
+            .addField(new KeyedCodec<>("name", Codec.STRING), (c, v) -> c.name = v, c -> c.name)
+            .addField(new KeyedCodec<>("aliases", Codec.STRING_ARRAY), (c, v) -> c.aliases = v, c -> c.aliases)
+            .addField(new KeyedCodec<>("description", Codec.STRING), (c, v) -> c.description = v, c -> c.description)
+            .addField(new KeyedCodec<>("permission", Codec.STRING), (c, v) -> c.permission = v, c -> c.permission)
+            .addField(new KeyedCodec<>("title", Codec.STRING), (c, v) -> c.title = v, c -> c.title)
+            .addField(new KeyedCodec<>("subtitle", Codec.STRING), (c, v) -> c.subtitle = v, c -> c.subtitle)
+            .addField(new KeyedCodec<>("force", Codec.BOOLEAN), (c, v) -> c.force = v, c -> c.force)
+            .addField(new KeyedCodec<>("zone", Codec.STRING), (c, v) -> c.zone = v, c -> c.zone)
+            .addField(new KeyedCodec<>("fadeInSeconds", Codec.FLOAT), (c, v) -> c.fadeInSeconds = v, c -> c.fadeInSeconds)
+            .addField(new KeyedCodec<>("staySeconds", Codec.FLOAT), (c, v) -> c.staySeconds = v, c -> c.staySeconds)
+            .addField(new KeyedCodec<>("fadeOutSeconds", Codec.FLOAT), (c, v) -> c.fadeOutSeconds = v, c -> c.fadeOutSeconds)
+            .addField(new KeyedCodec<>("parseMessages", Codec.BOOLEAN), (c, v) -> c.parseMessages = v, c -> c.parseMessages)
+            .build();
+
+        public boolean enabled = true;
+        public String name = "title";
+        public String[] aliases = new String[0];
+        public String description = "Show a title to a player.";
+        public String permission = "admintools.command.show.title";
+        public String title = "Admin Tools";
+        public String subtitle = "Hello, {player}!";
+        public boolean force = true;
+        public String zone = "default";
+        public float fadeInSeconds = 0.5f;
+        public float staySeconds = 2.0f;
+        public float fadeOutSeconds = 0.5f;
+        public boolean parseMessages = true;
+    }
+
+    public static final class ShowHologram {
+        public static final BuilderCodec<ShowHologram> CODEC = BuilderCodec.builder(ShowHologram.class, ShowHologram::new)
+            .addField(new KeyedCodec<>("enabled", Codec.BOOLEAN), (c, v) -> c.enabled = v, c -> c.enabled)
+            .addField(new KeyedCodec<>("name", Codec.STRING), (c, v) -> c.name = v, c -> c.name)
+            .addField(new KeyedCodec<>("aliases", Codec.STRING_ARRAY), (c, v) -> c.aliases = v, c -> c.aliases)
+            .addField(new KeyedCodec<>("description", Codec.STRING), (c, v) -> c.description = v, c -> c.description)
+            .addField(new KeyedCodec<>("permission", Codec.STRING), (c, v) -> c.permission = v, c -> c.permission)
+            .addField(new KeyedCodec<>("text", Codec.STRING), (c, v) -> c.text = v, c -> c.text)
+            .addField(new KeyedCodec<>("heightOffset", Codec.FLOAT), (c, v) -> c.heightOffset = v, c -> c.heightOffset)
+            .addField(new KeyedCodec<>("scale", Codec.FLOAT), (c, v) -> c.scale = v, c -> c.scale)
+            .addField(new KeyedCodec<>("durationSeconds", Codec.FLOAT), (c, v) -> c.durationSeconds = v, c -> c.durationSeconds)
+            .addField(new KeyedCodec<>("parseMessages", Codec.BOOLEAN), (c, v) -> c.parseMessages = v, c -> c.parseMessages)
+            .build();
+
+        public boolean enabled = true;
+        public String name = "hologram";
+        public String[] aliases = new String[0];
+        public String description = "Show a hologram at a player.";
+        public String permission = "admintools.command.show.hologram";
+        public String text = "AdminTools Hologram";
+        public float heightOffset = 2.0f;
+        public float scale = 0.01f;
+        public float durationSeconds = 10.0f;
+        public boolean parseMessages = true;
+    }
+
+    public static final class OpenUi {
+        public static final BuilderCodec<OpenUi> CODEC = BuilderCodec.builder(OpenUi.class, OpenUi::new)
+            .addField(new KeyedCodec<>("enabled", Codec.BOOLEAN), (c, v) -> c.enabled = v, c -> c.enabled)
+            .addField(new KeyedCodec<>("name", Codec.STRING), (c, v) -> c.name = v, c -> c.name)
+            .addField(new KeyedCodec<>("aliases", Codec.STRING_ARRAY), (c, v) -> c.aliases = v, c -> c.aliases)
+            .addField(new KeyedCodec<>("description", Codec.STRING), (c, v) -> c.description = v, c -> c.description)
+            .addField(new KeyedCodec<>("permission", Codec.STRING), (c, v) -> c.permission = v, c -> c.permission)
+            .build();
+
+        public boolean enabled = true;
+        public String name = "openui";
+        public String[] aliases = new String[0];
+        public String description = "Open the AdminTools UI.";
+        public String permission = "admintools.command.openui";
+    }
+
+    public static final class Chat {
+        public static final BuilderCodec<Chat> CODEC = BuilderCodec.builder(Chat.class, Chat::new)
+            .addField(new KeyedCodec<>("enabled", Codec.BOOLEAN), (c, v) -> c.enabled = v, c -> c.enabled)
+            .addField(new KeyedCodec<>("format", Codec.STRING), (c, v) -> c.format = v, c -> c.format)
+            .addField(new KeyedCodec<>("parseMessages", Codec.BOOLEAN), (c, v) -> c.parseMessages = v, c -> c.parseMessages)
+            .build();
+
+        public boolean enabled = true;
+        public String format = "[{player}] {message}";
+        public boolean parseMessages = true;
+    }
+
+    public static final class JoinNotification {
+        public static final BuilderCodec<JoinNotification> CODEC = BuilderCodec.builder(JoinNotification.class, JoinNotification::new)
+            .addField(new KeyedCodec<>("enabled", Codec.BOOLEAN), (c, v) -> c.enabled = v, c -> c.enabled)
+            .addField(new KeyedCodec<>("sendToUniverse", Codec.BOOLEAN), (c, v) -> c.sendToUniverse = v, c -> c.sendToUniverse)
+            .addField(new KeyedCodec<>("title", Codec.STRING), (c, v) -> c.title = v, c -> c.title)
+            .addField(new KeyedCodec<>("body", Codec.STRING), (c, v) -> c.body = v, c -> c.body)
+            .addField(new KeyedCodec<>("style", Codec.STRING), (c, v) -> c.style = v, c -> c.style)
+            .addField(new KeyedCodec<>("iconItemId", Codec.STRING), (c, v) -> c.iconItemId = v, c -> c.iconItemId)
+            .addField(new KeyedCodec<>("parseMessages", Codec.BOOLEAN), (c, v) -> c.parseMessages = v, c -> c.parseMessages)
+            .build();
+
+        public boolean enabled = true;
+        public boolean sendToUniverse = true;
+        public String title = "Player Joined";
+        public String body = "{player} joined the server.";
+        public String style = "Success";
+        public String iconItemId = "";
+        public boolean parseMessages = true;
+    }
+
+    public static final class CustomItem {
+        public static final BuilderCodec<CustomItem> CODEC = BuilderCodec.builder(CustomItem.class, CustomItem::new)
+            .addField(new KeyedCodec<>("enabled", Codec.BOOLEAN), (c, v) -> c.enabled = v, c -> c.enabled)
+            .addField(new KeyedCodec<>("itemId", Codec.STRING), (c, v) -> c.itemId = v, c -> c.itemId)
+            .addField(new KeyedCodec<>("metadataKey", Codec.STRING), (c, v) -> c.metadataKey = v, c -> c.metadataKey)
+            .addField(new KeyedCodec<>("matchItemId", Codec.BOOLEAN), (c, v) -> c.matchItemId = v, c -> c.matchItemId)
+            .addField(new KeyedCodec<>("matchMetadata", Codec.BOOLEAN), (c, v) -> c.matchMetadata = v, c -> c.matchMetadata)
+            .addField(new KeyedCodec<>("interactionTypes", Codec.STRING_ARRAY), (c, v) -> c.interactionTypes = v, c -> c.interactionTypes)
+            .addField(new KeyedCodec<>("soundEventId", Codec.STRING), (c, v) -> c.soundEventId = v, c -> c.soundEventId)
+            .addField(new KeyedCodec<>("soundCategory", Codec.STRING), (c, v) -> c.soundCategory = v, c -> c.soundCategory)
+            .addField(new KeyedCodec<>("soundVolume", Codec.FLOAT), (c, v) -> c.soundVolume = v, c -> c.soundVolume)
+            .addField(new KeyedCodec<>("soundPitch", Codec.FLOAT), (c, v) -> c.soundPitch = v, c -> c.soundPitch)
+            .addField(new KeyedCodec<>("particleSystemId", Codec.STRING), (c, v) -> c.particleSystemId = v, c -> c.particleSystemId)
+            .addField(new KeyedCodec<>("lightningCount", Codec.INTEGER), (c, v) -> c.lightningCount = v, c -> c.lightningCount)
+            .addField(new KeyedCodec<>("lightningSpread", Codec.FLOAT), (c, v) -> c.lightningSpread = v, c -> c.lightningSpread)
+            .addField(new KeyedCodec<>("cooldownSeconds", Codec.FLOAT), (c, v) -> c.cooldownSeconds = v, c -> c.cooldownSeconds)
+            .addField(new KeyedCodec<>("cancelInteraction", Codec.BOOLEAN), (c, v) -> c.cancelInteraction = v, c -> c.cancelInteraction)
+            .addField(new KeyedCodec<>("cooldownMessage", Codec.STRING), (c, v) -> c.cooldownMessage = v, c -> c.cooldownMessage)
+            .addField(new KeyedCodec<>("parseMessages", Codec.BOOLEAN), (c, v) -> c.parseMessages = v, c -> c.parseMessages)
+            .build();
+
+        public boolean enabled = true;
+        public String itemId = "AdminTools_Lightning_Wand";
+        public String metadataKey = "AdminTools.CustomItem";
+        public boolean matchItemId = true;
+        public boolean matchMetadata = false;
+        public String[] interactionTypes = new String[] { "Primary" };
+        public String soundEventId = "SFX_Global_Weather_Thunder";
+        public String soundCategory = "SFX";
+        public float soundVolume = 1.0f;
+        public float soundPitch = 1.0f;
+        public String particleSystemId = "Lightning";
+        public int lightningCount = 1;
+        public float lightningSpread = 0.0f;
+        public float cooldownSeconds = 1.0f;
+        public boolean cancelInteraction = false;
+        public String cooldownMessage = "Item is on cooldown.";
+        public boolean parseMessages = true;
+    }
+
+    public static final class Hologram {
+        public static final BuilderCodec<Hologram> CODEC = BuilderCodec.builder(Hologram.class, Hologram::new)
+            .addField(new KeyedCodec<>("entityId", Codec.STRING), (c, v) -> c.entityId = v, c -> c.entityId)
+            .addField(new KeyedCodec<>("defaultRotationYaw", Codec.FLOAT), (c, v) -> c.defaultRotationYaw = v, c -> c.defaultRotationYaw)
+            .addField(new KeyedCodec<>("defaultRotationPitch", Codec.FLOAT), (c, v) -> c.defaultRotationPitch = v, c -> c.defaultRotationPitch)
+            .addField(new KeyedCodec<>("defaultRotationRoll", Codec.FLOAT), (c, v) -> c.defaultRotationRoll = v, c -> c.defaultRotationRoll)
+            .build();
+
+        public String entityId = "AdminTools_Hologram";
+        public float defaultRotationYaw = 0.0f;
+        public float defaultRotationPitch = 0.0f;
+        public float defaultRotationRoll = 0.0f;
+    }
+
+    public static final class Ui {
+        public static final BuilderCodec<Ui> CODEC = BuilderCodec.builder(Ui.class, Ui::new)
+            .addField(new KeyedCodec<>("uiPath", Codec.STRING), (c, v) -> c.uiPath = v, c -> c.uiPath)
+            .addField(new KeyedCodec<>("title", Codec.STRING), (c, v) -> c.title = v, c -> c.title)
+            .addField(new KeyedCodec<>("subtitle", Codec.STRING), (c, v) -> c.subtitle = v, c -> c.subtitle)
+            .addField(new KeyedCodec<>("body", Codec.STRING), (c, v) -> c.body = v, c -> c.body)
+            .addField(new KeyedCodec<>("parseMessages", Codec.BOOLEAN), (c, v) -> c.parseMessages = v, c -> c.parseMessages)
+            .build();
+
+        public String uiPath = "Pages/AdminToolsPage.ui";
+        public String title = "Admin Tools";
+        public String subtitle = "Configuration Panel";
+        public String body = "Custom UI loaded from the plugin asset pack.";
+        public boolean parseMessages = true;
+    }
+}

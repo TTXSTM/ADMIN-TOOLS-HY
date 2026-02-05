@@ -1,0 +1,7 @@
+{
+  "TranslationProperties": {
+    "Name": "server.items.AdminTools_Lightning_Wand.name",
+    "Description": "server.items.AdminTools_Lightning_Wand.description"
+  },
+  "Parent": "Ingredient_Lightning_Essence"
+}

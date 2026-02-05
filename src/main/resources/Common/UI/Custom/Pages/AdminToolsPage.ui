@@ -1,0 +1,38 @@
+$C = "../Common.ui";
+
+$C.@PageOverlay {}
+
+$C.@Container {
+  Anchor: (Width: 900, Height: 560);
+
+  Label #TitleLabel {
+    Anchor: (Top: 30, Left: 30, Right: 30);
+    Text: "Admin Tools";
+    Style: (
+      FontSize: 32,
+      RenderBold: true,
+      Alignment: Center,
+      TextColor: #ffffff
+    );
+  }
+
+  Label #SubtitleLabel {
+    Anchor: (Top: 80, Left: 40, Right: 40);
+    Text: "Configuration Panel";
+    Style: (
+      FontSize: 18,
+      Alignment: Center,
+      TextColor: #bfcdd5
+    );
+  }
+
+  Label #BodyLabel {
+    Anchor: (Top: 130, Left: 60, Right: 60);
+    Text: "Custom UI loaded from the plugin asset pack.";
+    Style: (
+      FontSize: 16,
+      TextColor: #96a9be,
+      Alignment: Center
+    );
+  }
+}

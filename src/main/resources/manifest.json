@@ -1,0 +1,14 @@
+{
+  "Group": "dev.lussuria",
+  "Name": "AdminTools",
+  "Version": "1.0.0",
+  "Main": "dev.lussuria.admintools.AdminToolsPlugin",
+  "Description": "Admin tools plugin for Hytale.",
+  "IncludesAssetPack": true,
+  "Authors": [
+    {
+      "Name": "wefin"
+    }
+  ],
+  "ServerVersion": ">=0.0.0"
+}
