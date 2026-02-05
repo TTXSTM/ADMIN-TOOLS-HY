@@ -176,7 +176,7 @@ public final class AdminToolsPlugin extends JavaPlugin {
             })
         );
 
-        events.register(PlayerReadyEvent.class, event -> {
+        events.registerGlobal(PlayerReadyEvent.class, event -> {
             if (!cfg.joinNotification.enabled) {
                 return;
             }
