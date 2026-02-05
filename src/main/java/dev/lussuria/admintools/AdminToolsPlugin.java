@@ -210,7 +210,8 @@ public final class AdminToolsPlugin extends JavaPlugin {
             NotificationStyle style = parseNotificationStyle(cfg.joinNotification.style);
             ItemStack iconStack = buildIconStack(cfg.joinNotification.iconItemId);
 
-            if (cfg.joinNotification.sendToUniverse) {
+            boolean inWorld = playerRef.getWorldUuid() != null;
+            if (cfg.joinNotification.sendToUniverse && inWorld) {
                 if (iconStack == null) {
                     NotificationUtil.sendNotificationToUniverse(title, body, style);
                 } else {
