@@ -11,8 +11,9 @@ import com.hypixel.hytale.server.core.asset.type.soundevent.config.SoundEvent;
 import com.hypixel.hytale.server.core.command.system.CommandRegistry;
 import com.hypixel.hytale.server.core.entity.nameplate.Nameplate;
 import com.hypixel.hytale.server.core.event.events.player.PlayerChatEvent;
-import com.hypixel.hytale.server.core.event.events.player.PlayerConnectEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
+import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
+import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.Intangible;
@@ -56,6 +57,7 @@ public final class AdminToolsPlugin extends JavaPlugin {
     private final ScheduledExecutorService scheduler;
     private final Set<Ref<EntityStore>> hologramRefs = ConcurrentHashMap.newKeySet();
     private final Map<UUID, Long> itemCooldowns = new ConcurrentHashMap<>();
+    private final Set<UUID> joinNotifiedPlayers = ConcurrentHashMap.newKeySet();
     private final EnumSet<InteractionType> allowedInteractionTypes = EnumSet.noneOf(InteractionType.class);
 
     public AdminToolsPlugin(JavaPluginInit init) {
@@ -174,12 +176,19 @@ public final class AdminToolsPlugin extends JavaPlugin {
             })
         );
 
-        events.register(PlayerConnectEvent.class, event -> {
+        events.register(PlayerReadyEvent.class, event -> {
             if (!cfg.joinNotification.enabled) {
                 return;
             }
 
             PlayerRef playerRef = event.getPlayerRef();
+            if (playerRef == null) {
+                return;
+            }
+            UUID playerUuid = playerRef.getUuid();
+            if (playerUuid != null && !joinNotifiedPlayers.add(playerUuid)) {
+                return;
+            }
             Map<String, String> placeholders = Map.of(
                 "player", playerRef.getUsername()
             );
@@ -201,6 +210,13 @@ public final class AdminToolsPlugin extends JavaPlugin {
                 } else {
                     NotificationUtil.sendNotification(playerRef.getPacketHandler(), title, body, iconStack.toPacket(), style);
                 }
+            }
+        });
+
+        events.register(PlayerDisconnectEvent.class, event -> {
+            PlayerRef playerRef = event.getPlayerRef();
+            if (playerRef != null) {
+                joinNotifiedPlayers.remove(playerRef.getUuid());
             }
         });
 
