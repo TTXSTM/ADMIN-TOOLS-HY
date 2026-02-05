@@ -14,6 +14,7 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerChatEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.Intangible;
@@ -181,7 +182,18 @@ public final class AdminToolsPlugin extends JavaPlugin {
                 return;
             }
 
-            PlayerRef playerRef = event.getPlayerRef();
+            PlayerRef playerRef = null;
+            Player player = event.getPlayer();
+            if (player != null) {
+                playerRef = player.getPlayerRef();
+            }
+            if (playerRef == null) {
+                Ref<EntityStore> ref = event.getPlayerRef();
+                if (ref != null) {
+                    Store<EntityStore> store = ref.getStore();
+                    playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+                }
+            }
             if (playerRef == null) {
                 return;
             }
