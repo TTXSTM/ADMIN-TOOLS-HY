@@ -1,5 +1,7 @@
 package dev.lussuria.admintools;
 
+import com.hypixel.hytale.component.AddReason;
+import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.component.Store;
@@ -19,6 +21,7 @@ import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleCompon
 import com.hypixel.hytale.server.core.modules.entity.component.DisplayNameComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.Intangible;
 import com.hypixel.hytale.server.core.modules.entity.component.Invulnerable;
+import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
@@ -466,20 +469,21 @@ public final class AdminToolsPlugin extends JavaPlugin {
         String text,
         AdminToolsConfig.ShowHologram config
     ) {
+        Store<EntityStore> worldStore = world.getEntityStore().getStore();
         HologramEntity entity = new HologramEntity(world);
-        world.spawnEntity(entity, position, rotation);
+        Holder<EntityStore> holder = entity.toHolder();
+        holder.addComponent(TransformComponent.getComponentType(), new TransformComponent(position, rotation));
+        holder.addComponent(HeadRotation.getComponentType(), new HeadRotation(rotation));
+        holder.addComponent(Nameplate.getComponentType(), new Nameplate(text));
+        holder.addComponent(DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(text)));
 
-        Ref<EntityStore> ref = entity.getReference();
+        Ref<EntityStore> ref = worldStore.addEntity(holder, AddReason.SPAWN);
         if (ref == null || !ref.isValid()) {
             getLogger().at(java.util.logging.Level.WARNING).log("Failed to spawn hologram entity.");
             return;
         }
 
         Store<EntityStore> entityStore = ref.getStore();
-        Nameplate nameplate = entityStore.ensureAndGetComponent(ref, Nameplate.getComponentType());
-        nameplate.setText(text);
-        entityStore.putComponent(ref, DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(text)));
-
         EntityModule entityModule = EntityModule.get();
         if (entityModule != null) {
             entityStore.ensureAndGetComponent(ref, entityModule.getVisibleComponentType());
