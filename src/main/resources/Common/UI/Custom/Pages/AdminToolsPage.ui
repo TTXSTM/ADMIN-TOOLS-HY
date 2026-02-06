@@ -35,4 +35,62 @@ $C.@Container {
       Alignment: Center
     );
   }
+
+  Group #CommandPanel {
+    Anchor: (Top: 190, Left: 40, Right: 40, Bottom: 40);
+    LayoutMode: Top;
+    Padding: (Top: 6);
+
+    Label #CommandTextLabel {
+      Text: "Command Text (optional)";
+      Style: (
+        FontSize: 14,
+        TextColor: #bfcdd5
+      );
+      Anchor: (Bottom: 6);
+    }
+
+    $C.@TextField #CommandTextInput {
+      Anchor: (Height: 38, Bottom: 12);
+      PlaceholderText: "Type custom text for title or hologram";
+    }
+
+    Group #CommandButtonsRow {
+      LayoutMode: Left;
+      Anchor: (Height: 44, Bottom: 12);
+
+      $C.@TextButton #HealButton {
+        Anchor: (Width: 190, Right: 10);
+        Text: "/heal";
+      }
+
+      $C.@TextButton #ShowTitleButton {
+        Anchor: (Width: 220, Right: 10);
+        Text: "/show title";
+      }
+
+      $C.@TextButton #ShowHologramButton {
+        Anchor: (Width: 240);
+        Text: "/show hologram";
+      }
+    }
+
+    Group #CommandButtonsRow2 {
+      LayoutMode: Left;
+      Anchor: (Height: 44, Bottom: 12);
+
+      $C.@SecondaryTextButton #OpenUiButton {
+        Anchor: (Width: 190);
+        Text: "/openui";
+      }
+    }
+
+    Label #CommandHintLabel {
+      Text: "Click a button to run the command.";
+      Style: (
+        FontSize: 13,
+        TextColor: #7a9cc6
+      );
+    }
+  }
 }

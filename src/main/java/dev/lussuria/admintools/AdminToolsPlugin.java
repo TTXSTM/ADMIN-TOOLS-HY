@@ -243,7 +243,7 @@ public final class AdminToolsPlugin extends JavaPlugin {
         }
 
         if (cfg.commands.openUi.enabled) {
-            commands.registerCommand(new OpenUiCommand(cfg.commands.openUi, cfg.ui));
+            commands.registerCommand(new OpenUiCommand(cfg.commands.openUi, cfg.ui, cfg.commands));
         }
     }
 
@@ -479,6 +479,11 @@ public final class AdminToolsPlugin extends JavaPlugin {
         Nameplate nameplate = store.ensureAndGetComponent(ref, Nameplate.getComponentType());
         nameplate.setText(text);
         store.addComponent(ref, DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(text)));
+
+        EntityModule entityModule = EntityModule.get();
+        if (entityModule != null) {
+            store.ensureAndGetComponent(ref, entityModule.getVisibleComponentType());
+        }
 
         store.addComponent(ref, Intangible.getComponentType(), Intangible.INSTANCE);
         store.addComponent(ref, Invulnerable.getComponentType(), Invulnerable.INSTANCE);

@@ -15,11 +15,13 @@ import dev.lussuria.admintools.ui.AdminToolsPage;
 public final class OpenUiCommand extends AbstractPlayerCommand {
     private final AdminToolsConfig.OpenUi config;
     private final AdminToolsConfig.Ui ui;
+    private final AdminToolsConfig.Commands commands;
 
-    public OpenUiCommand(AdminToolsConfig.OpenUi config, AdminToolsConfig.Ui ui) {
+    public OpenUiCommand(AdminToolsConfig.OpenUi config, AdminToolsConfig.Ui ui, AdminToolsConfig.Commands commands) {
         super(config.name, config.description);
         this.config = config;
         this.ui = ui;
+        this.commands = commands;
         if (config.aliases.length > 0) {
             addAliases(config.aliases);
         }
@@ -42,6 +44,6 @@ public final class OpenUiCommand extends AbstractPlayerCommand {
             return;
         }
 
-        player.getPageManager().openCustomPage(playerRef, store, new AdminToolsPage(playerRefComponent, ui));
+        player.getPageManager().openCustomPage(playerRef, store, new AdminToolsPage(playerRefComponent, ui, commands));
     }
 }
