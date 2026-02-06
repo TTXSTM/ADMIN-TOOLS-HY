@@ -62,7 +62,8 @@ public final class AdminToolsPage extends InteractiveCustomUIPage<AdminToolsPage
         events.addEventBinding(
             CustomUIEventBindingType.Activating,
             "#HealButton",
-            EventData.of(AdminToolsPageEventData.KEY_COMMAND, healCommand)
+            EventData.of(AdminToolsPageEventData.KEY_COMMAND, healCommand),
+            false
         );
 
         events.addEventBinding(
@@ -70,7 +71,8 @@ public final class AdminToolsPage extends InteractiveCustomUIPage<AdminToolsPage
             "#ShowTitleButton",
             new EventData()
                 .append(AdminToolsPageEventData.KEY_COMMAND, showTitleCommand)
-                .append(AdminToolsPageEventData.KEY_TEXT, "#CommandTextInput.Value")
+                .append(AdminToolsPageEventData.KEY_TEXT, "#CommandTextInput.Value"),
+            false
         );
 
         events.addEventBinding(
@@ -78,13 +80,15 @@ public final class AdminToolsPage extends InteractiveCustomUIPage<AdminToolsPage
             "#ShowHologramButton",
             new EventData()
                 .append(AdminToolsPageEventData.KEY_COMMAND, showHologramCommand)
-                .append(AdminToolsPageEventData.KEY_TEXT, "#CommandTextInput.Value")
+                .append(AdminToolsPageEventData.KEY_TEXT, "#CommandTextInput.Value"),
+            false
         );
 
         events.addEventBinding(
             CustomUIEventBindingType.Activating,
             "#OpenUiButton",
-            EventData.of(AdminToolsPageEventData.KEY_COMMAND, openUiCommand)
+            EventData.of(AdminToolsPageEventData.KEY_COMMAND, openUiCommand),
+            false
         );
     }
 

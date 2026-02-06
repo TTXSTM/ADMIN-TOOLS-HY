@@ -469,26 +469,26 @@ public final class AdminToolsPlugin extends JavaPlugin {
         HologramEntity entity = new HologramEntity(world);
         world.spawnEntity(entity, position, rotation);
 
-        int networkId = entity.getNetworkId();
-        Ref<EntityStore> ref = world.getEntityStore().getRefFromNetworkId(networkId);
+        Ref<EntityStore> ref = entity.getReference();
         if (ref == null || !ref.isValid()) {
             getLogger().at(java.util.logging.Level.WARNING).log("Failed to spawn hologram entity.");
             return;
         }
 
-        Nameplate nameplate = store.ensureAndGetComponent(ref, Nameplate.getComponentType());
+        Store<EntityStore> entityStore = ref.getStore();
+        Nameplate nameplate = entityStore.ensureAndGetComponent(ref, Nameplate.getComponentType());
         nameplate.setText(text);
-        store.addComponent(ref, DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(text)));
+        entityStore.putComponent(ref, DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(text)));
 
         EntityModule entityModule = EntityModule.get();
         if (entityModule != null) {
-            store.ensureAndGetComponent(ref, entityModule.getVisibleComponentType());
+            entityStore.ensureAndGetComponent(ref, entityModule.getVisibleComponentType());
         }
 
-        store.addComponent(ref, Intangible.getComponentType(), Intangible.INSTANCE);
-        store.addComponent(ref, Invulnerable.getComponentType(), Invulnerable.INSTANCE);
+        entityStore.addComponent(ref, Intangible.getComponentType(), Intangible.INSTANCE);
+        entityStore.addComponent(ref, Invulnerable.getComponentType(), Invulnerable.INSTANCE);
         if (config.scale > 0f) {
-            store.addComponent(ref, EntityScaleComponent.getComponentType(), new EntityScaleComponent(config.scale));
+            entityStore.addComponent(ref, EntityScaleComponent.getComponentType(), new EntityScaleComponent(config.scale));
         }
 
         hologramRefs.add(ref);
