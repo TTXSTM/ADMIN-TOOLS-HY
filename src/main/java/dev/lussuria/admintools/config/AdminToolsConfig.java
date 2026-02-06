@@ -156,11 +156,27 @@ public final class AdminToolsConfig {
             .addField(new KeyedCodec<>("Enabled", Codec.BOOLEAN), (c, v) -> c.enabled = v, c -> c.enabled)
             .addField(new KeyedCodec<>("Format", Codec.STRING), (c, v) -> c.format = v, c -> c.format)
             .addField(new KeyedCodec<>("ParseMessages", Codec.BOOLEAN), (c, v) -> c.parseMessages = v, c -> c.parseMessages)
+            .addField(new KeyedCodec<>("IncludeRole", Codec.BOOLEAN), (c, v) -> c.includeRole = v, c -> c.includeRole)
+            .addField(new KeyedCodec<>("DefaultRole", Codec.STRING), (c, v) -> c.defaultRole = v, c -> c.defaultRole)
+            .addField(new KeyedCodec<>("UseGroupNameIfNoMapping", Codec.BOOLEAN), (c, v) -> c.useGroupNameIfNoMapping = v, c -> c.useGroupNameIfNoMapping)
+            .addField(new KeyedCodec<>("RolePriority", Codec.STRING_ARRAY), (c, v) -> c.rolePriority = v, c -> c.rolePriority)
+            .addField(new KeyedCodec<>("RoleMappings", Codec.STRING_ARRAY), (c, v) -> c.roleMappings = v, c -> c.roleMappings)
             .build();
 
         public boolean enabled = true;
-        public String format = "[{player}] {message}";
+        public String format = "{role} {player} >> {message}";
         public boolean parseMessages = true;
+        public boolean includeRole = true;
+        public String defaultRole = "Player";
+        public boolean useGroupNameIfNoMapping = true;
+        public String[] rolePriority = new String[] { "OP", "Admin", "Moderator", "Mod", "Default" };
+        public String[] roleMappings = new String[] {
+            "OP=[Admin]",
+            "Admin=[Admin]",
+            "Moderator=[Mod]",
+            "Mod=[Mod]",
+            "Default=[Player]"
+        };
     }
 
     public static final class JoinNotification {

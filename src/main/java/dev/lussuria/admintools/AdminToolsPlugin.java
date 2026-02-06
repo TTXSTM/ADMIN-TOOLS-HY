@@ -16,11 +16,13 @@ import com.hypixel.hytale.server.core.event.events.player.AddPlayerToWorldEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
 import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleComponent;
+import com.hypixel.hytale.server.core.modules.entity.component.DisplayNameComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.Intangible;
 import com.hypixel.hytale.server.core.modules.entity.component.Invulnerable;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
+import com.hypixel.hytale.server.core.permissions.PermissionsModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.ParticleUtil;
 import com.hypixel.hytale.server.core.universe.world.SoundUtil;
@@ -45,6 +47,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -121,6 +128,89 @@ public final class AdminToolsPlugin extends JavaPlugin {
         }
     }
 
+    private String resolveRoleForPlayer(PlayerRef playerRef, AdminToolsConfig.Chat chat) {
+        if (chat == null || !chat.includeRole) {
+            return "";
+        }
+        if (playerRef == null || playerRef.getUuid() == null) {
+            return chat.defaultRole;
+        }
+        Set<String> groups = null;
+        try {
+            PermissionsModule permissions = PermissionsModule.get();
+            if (permissions != null) {
+                groups = permissions.getGroupsForUser(playerRef.getUuid());
+            }
+        } catch (Exception ignored) {
+            // Best-effort.
+        }
+        return resolveRoleFromGroups(groups, chat);
+    }
+
+    private String resolveRoleFromGroups(Set<String> groups, AdminToolsConfig.Chat chat) {
+        String selectedGroup = selectGroup(groups, chat.rolePriority);
+        Map<String, String> mappings = parseRoleMappings(chat.roleMappings);
+        if (selectedGroup != null && mappings.containsKey(selectedGroup)) {
+            return mappings.get(selectedGroup);
+        }
+        if (selectedGroup != null && chat.useGroupNameIfNoMapping) {
+            return selectedGroup;
+        }
+        return chat.defaultRole;
+    }
+
+    private String selectGroup(Set<String> groups, String[] priority) {
+        if (groups == null || groups.isEmpty()) {
+            return null;
+        }
+        Set<String> upperGroups = new HashSet<>();
+        for (String group : groups) {
+            if (group == null || group.isBlank()) {
+                continue;
+            }
+            upperGroups.add(group.toUpperCase(Locale.ROOT));
+        }
+        if (priority != null) {
+            for (String group : priority) {
+                if (group == null || group.isBlank()) {
+                    continue;
+                }
+                String key = group.toUpperCase(Locale.ROOT);
+                if (upperGroups.contains(key)) {
+                    return key;
+                }
+            }
+        }
+        ArrayList<String> sorted = new ArrayList<>(upperGroups);
+        Collections.sort(sorted);
+        return sorted.isEmpty() ? null : sorted.get(0);
+    }
+
+    private Map<String, String> parseRoleMappings(String[] mappings) {
+        Map<String, String> result = new LinkedHashMap<>();
+        if (mappings == null) {
+            return result;
+        }
+        for (String entry : mappings) {
+            if (entry == null || entry.isBlank()) {
+                continue;
+            }
+            int idx = entry.indexOf('=');
+            if (idx < 0) {
+                idx = entry.indexOf(':');
+            }
+            if (idx < 0) {
+                continue;
+            }
+            String key = entry.substring(0, idx).trim();
+            String value = entry.substring(idx + 1).trim();
+            if (!key.isEmpty()) {
+                result.put(key.toUpperCase(Locale.ROOT), value);
+            }
+        }
+        return result;
+    }
+
     private void registerHologramEntity(AdminToolsConfig.Hologram hologram) {
         try {
             EntityModule.get().registerEntity(
@@ -166,9 +256,11 @@ public final class AdminToolsPlugin extends JavaPlugin {
                     return event;
                 }
                 event.setFormatter((playerRef, content) -> {
+                    String role = resolveRoleForPlayer(playerRef, cfg.chat);
                     Map<String, String> placeholders = Map.of(
                         "player", playerRef.getUsername(),
-                        "message", content
+                        "message", content,
+                        "role", role == null ? "" : role
                     );
                     return MessageUtil.renderMessage(cfg.chat.format, placeholders, cfg.chat.parseMessages);
                 });
@@ -386,6 +478,7 @@ public final class AdminToolsPlugin extends JavaPlugin {
 
         Nameplate nameplate = store.ensureAndGetComponent(ref, Nameplate.getComponentType());
         nameplate.setText(text);
+        store.addComponent(ref, DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(text)));
 
         store.addComponent(ref, Intangible.getComponentType(), Intangible.INSTANCE);
         store.addComponent(ref, Invulnerable.getComponentType(), Invulnerable.INSTANCE);
