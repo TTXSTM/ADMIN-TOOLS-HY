@@ -10,7 +10,14 @@ public final class MessageUtil {
 
     public static Message renderMessage(String template, Map<String, String> placeholders, boolean parse) {
         String text = applyPlaceholders(template, placeholders);
-        return parse ? Message.parse(text) : Message.raw(text);
+        if (!parse) {
+            return Message.raw(text);
+        }
+        try {
+            return Message.parse(text);
+        } catch (RuntimeException ex) {
+            return Message.raw(text);
+        }
     }
 
     public static String applyPlaceholders(String template, Map<String, String> placeholders) {
