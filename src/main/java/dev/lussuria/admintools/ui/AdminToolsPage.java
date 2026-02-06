@@ -1,7 +1,6 @@
 package dev.lussuria.admintools.ui;
 
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
-import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.BasicCustomUIPage;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -28,9 +27,9 @@ public final class AdminToolsPage extends BasicCustomUIPage {
             "player", playerRef.getUsername()
         );
 
-        Message title = MessageUtil.renderMessage(ui.title, placeholders, ui.parseMessages);
-        Message subtitle = MessageUtil.renderMessage(ui.subtitle, placeholders, ui.parseMessages);
-        Message body = MessageUtil.renderMessage(ui.body, placeholders, ui.parseMessages);
+        String title = MessageUtil.applyPlaceholders(ui.title, placeholders);
+        String subtitle = MessageUtil.applyPlaceholders(ui.subtitle, placeholders);
+        String body = MessageUtil.applyPlaceholders(ui.body, placeholders);
 
         commands.set("#TitleLabel.Text", title);
         commands.set("#SubtitleLabel.Text", subtitle);
