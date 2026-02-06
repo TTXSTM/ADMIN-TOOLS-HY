@@ -15,7 +15,7 @@ public final class MessageUtil {
         }
         try {
             return Message.parse(text);
-        } catch (RuntimeException ex) {
+        } catch (Exception ex) {
             return Message.raw(text);
         }
     }
