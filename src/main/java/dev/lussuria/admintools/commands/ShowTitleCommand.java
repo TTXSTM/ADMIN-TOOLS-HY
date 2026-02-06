@@ -5,6 +5,7 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -35,81 +36,74 @@ public final class ShowTitleCommand extends AbstractCommand {
 
     @Override
     protected CompletableFuture<Void> execute(CommandContext context) {
-        Ref<EntityStore> senderRef = context.isPlayer() ? context.senderAsPlayerRef() : null;
-        Store<EntityStore> senderStore = senderRef == null ? null : senderRef.getStore();
-        PlayerRef senderPlayer = senderStore == null ? null : senderStore.getComponent(senderRef, PlayerRef.getComponentType());
-        World senderWorld = senderStore == null ? null : ((EntityStore) senderStore.getExternalData()).getWorld();
-
-        String[] args = CommandInputUtil.extractArgs(context, this);
-        PlayerRef targetPlayer = null;
-        int textStartIndex = 0;
-
-        if (senderWorld != null && args.length > 0) {
-            targetPlayer = CommandInputUtil.findPlayerByName(senderWorld, args[0]);
-            if (targetPlayer != null) {
-                textStartIndex = 1;
-            }
-        }
-        if (targetPlayer == null) {
-            targetPlayer = senderPlayer;
-        }
-        if (targetPlayer == null) {
-            context.sendMessage(Message.raw("Player not found."));
+        Player senderEntity = context.senderAs(Player.class);
+        if (senderEntity == null) {
+            context.sendMessage(Message.raw("Command can only be used by a player."));
             return CompletableFuture.completedFuture(null);
         }
 
-        Ref<EntityStore> targetRef = targetPlayer.getReference();
-        if (targetRef == null || !targetRef.isValid()) {
-            context.sendMessage(Message.raw("Player not found."));
-            return CompletableFuture.completedFuture(null);
-        }
-
-        Store<EntityStore> targetStore = targetRef.getStore();
-        World world = targetStore == null ? null : ((EntityStore) targetStore.getExternalData()).getWorld();
+        World world = senderEntity.getWorld();
         if (world == null) {
             context.sendMessage(Message.raw("Player is not in a world."));
             return CompletableFuture.completedFuture(null);
         }
 
-        String customText = CommandInputUtil.join(args, textStartIndex).trim();
-        String titleTemplate = config.title;
-        String subtitleTemplate = config.subtitle;
-        if (!customText.isBlank()) {
-            String[] split = splitTitle(customText);
-            titleTemplate = split[0];
-            subtitleTemplate = split[1];
-        }
-
+        String[] args = CommandInputUtil.extractArgs(context, this);
         String senderName = context.sender().getDisplayName();
-        String targetName = targetPlayer.getUsername();
 
-        Map<String, String> placeholders = new HashMap<>();
-        placeholders.put("sender", senderName);
-        placeholders.put("player", targetName);
+        world.execute(() -> {
+            PlayerRef senderPlayer = senderEntity.getPlayerRef();
+            PlayerRef targetPlayer = null;
+            int textStartIndex = 0;
 
-        String zone = config.zone;
-        if (zone == null || zone.isBlank() || "default".equalsIgnoreCase(zone)) {
-            zone = EventTitleUtil.DEFAULT_ZONE;
-        }
+            if (args.length > 0) {
+                targetPlayer = CommandInputUtil.findPlayerByName(world, args[0]);
+                if (targetPlayer != null) {
+                    textStartIndex = 1;
+                }
+            }
+            if (targetPlayer == null) {
+                targetPlayer = senderPlayer;
+            }
+            if (targetPlayer == null) {
+                senderEntity.sendMessage(Message.raw("Player not found."));
+                return;
+            }
 
-        Message title = MessageUtil.renderMessage(titleTemplate, placeholders, config.parseMessages);
-        Message subtitle = MessageUtil.renderMessage(subtitleTemplate, placeholders, config.parseMessages);
+            String customText = CommandInputUtil.join(args, textStartIndex).trim();
+            String titleTemplate = config.title;
+            String subtitleTemplate = config.subtitle;
+            if (!customText.isBlank()) {
+                String[] split = splitTitle(customText);
+                titleTemplate = split[0];
+                subtitleTemplate = split[1];
+            }
 
-        PlayerRef target = targetPlayer;
-        String finalZone = zone;
-        Message finalTitle = title;
-        Message finalSubtitle = subtitle;
+            String targetName = targetPlayer.getUsername();
 
-        world.execute(() -> EventTitleUtil.showEventTitleToPlayer(
-            target,
-            finalTitle,
-            finalSubtitle,
-            config.force,
-            finalZone,
-            config.staySeconds,
-            config.fadeInSeconds,
-            config.fadeOutSeconds
-        ));
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("sender", senderName);
+            placeholders.put("player", targetName);
+
+            String zone = config.zone;
+            if (zone == null || zone.isBlank() || "default".equalsIgnoreCase(zone)) {
+                zone = EventTitleUtil.DEFAULT_ZONE;
+            }
+
+            Message title = MessageUtil.renderMessage(titleTemplate, placeholders, config.parseMessages);
+            Message subtitle = MessageUtil.renderMessage(subtitleTemplate, placeholders, config.parseMessages);
+
+            EventTitleUtil.showEventTitleToPlayer(
+                targetPlayer,
+                title,
+                subtitle,
+                config.force,
+                zone,
+                config.staySeconds,
+                config.fadeInSeconds,
+                config.fadeOutSeconds
+            );
+        });
 
         return CompletableFuture.completedFuture(null);
     }

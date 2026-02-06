@@ -5,6 +5,7 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
@@ -39,69 +40,74 @@ public final class ShowHologramCommand extends AbstractCommand {
 
     @Override
     protected CompletableFuture<Void> execute(CommandContext context) {
-        Ref<EntityStore> senderRef = context.isPlayer() ? context.senderAsPlayerRef() : null;
-        Store<EntityStore> senderStore = senderRef == null ? null : senderRef.getStore();
-        PlayerRef senderPlayer = senderStore == null ? null : senderStore.getComponent(senderRef, PlayerRef.getComponentType());
-        World senderWorld = senderStore == null ? null : ((EntityStore) senderStore.getExternalData()).getWorld();
-
-        String[] args = CommandInputUtil.extractArgs(context, this);
-        PlayerRef targetPlayer = null;
-        int textStartIndex = 0;
-
-        if (senderWorld != null && args.length > 0) {
-            targetPlayer = CommandInputUtil.findPlayerByName(senderWorld, args[0]);
-            if (targetPlayer != null) {
-                textStartIndex = 1;
-            }
-        }
-        if (targetPlayer == null) {
-            targetPlayer = senderPlayer;
-        }
-        if (targetPlayer == null) {
-            context.sendMessage(Message.raw("Player not found."));
+        Player senderEntity = context.senderAs(Player.class);
+        if (senderEntity == null) {
+            context.sendMessage(Message.raw("Command can only be used by a player."));
             return CompletableFuture.completedFuture(null);
         }
 
-        Ref<EntityStore> targetRef = targetPlayer.getReference();
-        if (targetRef == null || !targetRef.isValid()) {
-            context.sendMessage(Message.raw("Player not found."));
-            return CompletableFuture.completedFuture(null);
-        }
-
-        Store<EntityStore> targetStore = targetRef.getStore();
-        World world = targetStore == null ? null : ((EntityStore) targetStore.getExternalData()).getWorld();
+        World world = senderEntity.getWorld();
         if (world == null) {
             context.sendMessage(Message.raw("Player is not in a world."));
             return CompletableFuture.completedFuture(null);
         }
 
-        TransformComponent transform = targetStore.getComponent(targetRef, TransformComponent.getComponentType());
-        if (transform == null || transform.getPosition() == null) {
-            context.sendMessage(Message.raw("Cannot read target position."));
-            return CompletableFuture.completedFuture(null);
-        }
-
-        Vector3d position = new Vector3d(transform.getPosition());
-        position.add(0, config.heightOffset, 0);
-
-        Vector3f rotation = new Vector3f(
-            plugin.getConfig().hologram.defaultRotationYaw,
-            plugin.getConfig().hologram.defaultRotationPitch,
-            plugin.getConfig().hologram.defaultRotationRoll
-        );
-
+        String[] args = CommandInputUtil.extractArgs(context, this);
         String senderName = context.sender().getDisplayName();
-        String targetName = targetPlayer.getUsername();
 
-        Map<String, String> placeholders = new HashMap<>();
-        placeholders.put("sender", senderName);
-        placeholders.put("player", targetName);
+        world.execute(() -> {
+            PlayerRef senderPlayer = senderEntity.getPlayerRef();
+            PlayerRef targetPlayer = null;
+            int textStartIndex = 0;
 
-        String customText = CommandInputUtil.join(args, textStartIndex).trim();
-        String template = customText.isBlank() ? config.text : customText;
-        String text = MessageUtil.applyPlaceholders(template, placeholders);
+            if (args.length > 0) {
+                targetPlayer = CommandInputUtil.findPlayerByName(world, args[0]);
+                if (targetPlayer != null) {
+                    textStartIndex = 1;
+                }
+            }
+            if (targetPlayer == null) {
+                targetPlayer = senderPlayer;
+            }
+            if (targetPlayer == null) {
+                senderEntity.sendMessage(Message.raw("Player not found."));
+                return;
+            }
 
-        world.execute(() -> plugin.spawnHologram(world, targetStore, position, rotation, text, config));
+            Ref<EntityStore> targetRef = targetPlayer.getReference();
+            if (targetRef == null || !targetRef.isValid()) {
+                senderEntity.sendMessage(Message.raw("Player not found."));
+                return;
+            }
+
+            Store<EntityStore> targetStore = targetRef.getStore();
+            TransformComponent transform = targetStore.getComponent(targetRef, TransformComponent.getComponentType());
+            if (transform == null || transform.getPosition() == null) {
+                senderEntity.sendMessage(Message.raw("Cannot read target position."));
+                return;
+            }
+
+            Vector3d position = new Vector3d(transform.getPosition());
+            position.add(0, config.heightOffset, 0);
+
+            Vector3f rotation = new Vector3f(
+                plugin.getConfig().hologram.defaultRotationYaw,
+                plugin.getConfig().hologram.defaultRotationPitch,
+                plugin.getConfig().hologram.defaultRotationRoll
+            );
+
+            String targetName = targetPlayer.getUsername();
+
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("sender", senderName);
+            placeholders.put("player", targetName);
+
+            String customText = CommandInputUtil.join(args, textStartIndex).trim();
+            String template = customText.isBlank() ? config.text : customText;
+            String text = MessageUtil.applyPlaceholders(template, placeholders);
+
+            plugin.spawnHologram(world, targetStore, position, rotation, text, config);
+        });
         return CompletableFuture.completedFuture(null);
     }
 }
