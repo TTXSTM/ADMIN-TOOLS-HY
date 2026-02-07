@@ -23,6 +23,7 @@ import com.hypixel.hytale.server.core.modules.entity.component.Intangible;
 import com.hypixel.hytale.server.core.modules.entity.component.Invulnerable;
 import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
+import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.permissions.PermissionsModule;
@@ -472,6 +473,7 @@ public final class AdminToolsPlugin extends JavaPlugin {
         Store<EntityStore> worldStore = world.getEntityStore().getStore();
         HologramEntity entity = new HologramEntity(world);
         Holder<EntityStore> holder = entity.toHolder();
+        holder.addComponent(NetworkId.getComponentType(), new NetworkId(world.getEntityStore().takeNextNetworkId()));
         holder.addComponent(TransformComponent.getComponentType(), new TransformComponent(position, rotation));
         holder.addComponent(HeadRotation.getComponentType(), new HeadRotation(rotation));
         holder.addComponent(Nameplate.getComponentType(), new Nameplate(text));
