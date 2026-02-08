@@ -45,3 +45,8 @@ bin/
 
 ### Local temp ###
 .tmp/
+
+### Local tooling / logs ###
+.claude/
+*.log
+*.ps1

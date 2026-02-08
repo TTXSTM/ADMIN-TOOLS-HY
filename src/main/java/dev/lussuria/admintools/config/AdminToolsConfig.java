@@ -28,6 +28,7 @@ public final class AdminToolsConfig {
             .addField(new KeyedCodec<>("ShowTitle", ShowTitle.CODEC), (c, v) -> c.showTitle = v, c -> c.showTitle)
             .addField(new KeyedCodec<>("ShowHologram", ShowHologram.CODEC), (c, v) -> c.showHologram = v, c -> c.showHologram)
             .addField(new KeyedCodec<>("OpenUi", OpenUi.CODEC), (c, v) -> c.openUi = v, c -> c.openUi)
+            .addField(new KeyedCodec<>("HologramCommands", HologramCommands.CODEC), (c, v) -> c.hologramCommands = v, c -> c.hologramCommands)
             .build();
 
         public ShowRoot showRoot = new ShowRoot();
@@ -35,6 +36,7 @@ public final class AdminToolsConfig {
         public ShowTitle showTitle = new ShowTitle();
         public ShowHologram showHologram = new ShowHologram();
         public OpenUi openUi = new OpenUi();
+        public HologramCommands hologramCommands = new HologramCommands();
     }
 
     public static final class ShowRoot {
@@ -149,6 +151,26 @@ public final class AdminToolsConfig {
         public String[] aliases = new String[0];
         public String description = "Open the AdminTools UI.";
         public String permission = "admintools.command.openui";
+    }
+
+    public static final class HologramCommands {
+        public static final BuilderCodec<HologramCommands> CODEC = BuilderCodec.builder(HologramCommands.class, HologramCommands::new)
+            .addField(new KeyedCodec<>("Enabled", Codec.BOOLEAN), (c, v) -> c.enabled = v, c -> c.enabled)
+            .addField(new KeyedCodec<>("Name", Codec.STRING), (c, v) -> c.name = v, c -> c.name)
+            .addField(new KeyedCodec<>("Aliases", Codec.STRING_ARRAY), (c, v) -> c.aliases = v, c -> c.aliases)
+            .addField(new KeyedCodec<>("Description", Codec.STRING), (c, v) -> c.description = v, c -> c.description)
+            .addField(new KeyedCodec<>("Permission", Codec.STRING), (c, v) -> c.permission = v, c -> c.permission)
+            .addField(new KeyedCodec<>("DefaultLineSpacing", Codec.FLOAT), (c, v) -> c.defaultLineSpacing = v, c -> c.defaultLineSpacing)
+            .addField(new KeyedCodec<>("DefaultScale", Codec.FLOAT), (c, v) -> c.defaultScale = v, c -> c.defaultScale)
+            .build();
+
+        public boolean enabled = true;
+        public String name = "holo";
+        public String[] aliases = new String[] { "hologram" };
+        public String description = "Manage persistent holograms.";
+        public String permission = "admintools.command.holo";
+        public float defaultLineSpacing = 0.25f;
+        public float defaultScale = 0.01f;
     }
 
     public static final class Chat {

@@ -1,7 +1,5 @@
 package dev.lussuria.admintools;
 
-import com.hypixel.hytale.component.AddReason;
-import com.hypixel.hytale.component.Holder;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.RemoveReason;
 import com.hypixel.hytale.component.Store;
@@ -11,19 +9,12 @@ import com.hypixel.hytale.protocol.packets.interface_.NotificationStyle;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.soundevent.config.SoundEvent;
 import com.hypixel.hytale.server.core.command.system.CommandRegistry;
-import com.hypixel.hytale.server.core.entity.nameplate.Nameplate;
 import com.hypixel.hytale.server.core.event.events.player.PlayerChatEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerInteractEvent;
 import com.hypixel.hytale.server.core.event.events.player.AddPlayerToWorldEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.inventory.ItemStack;
-import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleComponent;
-import com.hypixel.hytale.server.core.modules.entity.component.DisplayNameComponent;
-import com.hypixel.hytale.server.core.modules.entity.component.Intangible;
-import com.hypixel.hytale.server.core.modules.entity.component.Invulnerable;
-import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
-import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.permissions.PermissionsModule;
@@ -34,17 +25,18 @@ import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.core.util.Config;
 import com.hypixel.hytale.server.core.util.NotificationUtil;
-import com.hypixel.hytale.server.core.modules.entity.EntityModule;
 import com.hypixel.hytale.event.EventRegistry;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import dev.lussuria.admintools.commands.HealCommand;
+import dev.lussuria.admintools.commands.HologramCommand;
 import dev.lussuria.admintools.commands.OpenUiCommand;
 import dev.lussuria.admintools.commands.ShowCommand;
 import dev.lussuria.admintools.commands.ShowHologramCommand;
 import dev.lussuria.admintools.commands.ShowTitleCommand;
 import dev.lussuria.admintools.config.AdminToolsConfig;
-import dev.lussuria.admintools.entity.HologramEntity;
+import dev.lussuria.admintools.hologram.HologramManager;
+import dev.lussuria.admintools.hologram.HologramSpawner;
 import dev.lussuria.admintools.util.MessageUtil;
 
 import java.nio.file.Files;
@@ -70,6 +62,7 @@ public final class AdminToolsPlugin extends JavaPlugin {
     private final Map<UUID, Long> itemCooldowns = new ConcurrentHashMap<>();
     private final Set<UUID> joinNotifiedPlayers = ConcurrentHashMap.newKeySet();
     private final EnumSet<InteractionType> allowedInteractionTypes = EnumSet.noneOf(InteractionType.class);
+    private HologramManager hologramManager;
 
     public AdminToolsPlugin(JavaPluginInit init) {
         super(init);
@@ -87,19 +80,31 @@ public final class AdminToolsPlugin extends JavaPlugin {
         ensureConfigSaved();
         configureInteractionTypes(cfg.customItem);
 
-        registerHologramEntity(cfg.hologram);
+        hologramManager = new HologramManager(getLogger(), getDataDirectory(), cfg.commands.hologramCommands.defaultScale);
+        hologramManager.load();
+
         registerCommands(cfg);
         registerEvents(cfg);
+
+        scheduler.schedule(() -> hologramManager.spawnAllHolograms(), 2, TimeUnit.SECONDS);
     }
 
     @Override
     protected void shutdown() {
         scheduler.shutdownNow();
+        if (hologramManager != null) {
+            hologramManager.despawnAllHolograms();
+            hologramManager.save();
+        }
         cleanupHolograms();
     }
 
     public AdminToolsConfig getConfig() {
         return config.get();
+    }
+
+    public HologramManager getHologramManager() {
+        return hologramManager;
     }
 
     private void ensureConfigSaved() {
@@ -215,19 +220,6 @@ public final class AdminToolsPlugin extends JavaPlugin {
         return result;
     }
 
-    private void registerHologramEntity(AdminToolsConfig.Hologram hologram) {
-        try {
-            EntityModule.get().registerEntity(
-                hologram.entityId,
-                HologramEntity.class,
-                HologramEntity::new,
-                null
-            );
-        } catch (Exception e) {
-            getLogger().at(java.util.logging.Level.WARNING).log("Failed to register hologram entity: " + e.getMessage());
-        }
-    }
-
     private void registerCommands(AdminToolsConfig cfg) {
         CommandRegistry commands = getCommandRegistry();
 
@@ -248,6 +240,10 @@ public final class AdminToolsPlugin extends JavaPlugin {
 
         if (cfg.commands.openUi.enabled) {
             commands.registerCommand(new OpenUiCommand(cfg.commands.openUi, cfg.ui, cfg.commands));
+        }
+
+        if (cfg.commands.hologramCommands.enabled) {
+            commands.registerCommand(new HologramCommand(this, cfg.commands.hologramCommands));
         }
     }
 
@@ -470,31 +466,10 @@ public final class AdminToolsPlugin extends JavaPlugin {
         String text,
         AdminToolsConfig.ShowHologram config
     ) {
-        Store<EntityStore> worldStore = world.getEntityStore().getStore();
-        HologramEntity entity = new HologramEntity(world);
-        Holder<EntityStore> holder = entity.toHolder();
-        holder.addComponent(NetworkId.getComponentType(), new NetworkId(world.getEntityStore().takeNextNetworkId()));
-        holder.addComponent(TransformComponent.getComponentType(), new TransformComponent(position, rotation));
-        holder.addComponent(HeadRotation.getComponentType(), new HeadRotation(rotation));
-        holder.addComponent(Nameplate.getComponentType(), new Nameplate(text));
-        holder.addComponent(DisplayNameComponent.getComponentType(), new DisplayNameComponent(Message.raw(text)));
-
-        Ref<EntityStore> ref = worldStore.addEntity(holder, AddReason.SPAWN);
+        Ref<EntityStore> ref = HologramSpawner.spawnLine(world, position, text, config.scale);
         if (ref == null || !ref.isValid()) {
             getLogger().at(java.util.logging.Level.WARNING).log("Failed to spawn hologram entity.");
             return;
-        }
-
-        Store<EntityStore> entityStore = ref.getStore();
-        EntityModule entityModule = EntityModule.get();
-        if (entityModule != null) {
-            entityStore.ensureAndGetComponent(ref, entityModule.getVisibleComponentType());
-        }
-
-        entityStore.addComponent(ref, Intangible.getComponentType(), Intangible.INSTANCE);
-        entityStore.addComponent(ref, Invulnerable.getComponentType(), Invulnerable.INSTANCE);
-        if (config.scale > 0f) {
-            entityStore.addComponent(ref, EntityScaleComponent.getComponentType(), new EntityScaleComponent(config.scale));
         }
 
         hologramRefs.add(ref);
