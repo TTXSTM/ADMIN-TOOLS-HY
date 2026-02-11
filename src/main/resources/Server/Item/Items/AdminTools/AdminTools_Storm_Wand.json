@@ -48,7 +48,7 @@
               "Off": "On"
             },
             "Effects": {
-              "LocalSoundEventId": "SFX_Plushie_Build"
+              "LocalSoundEventId": "SFX_Global_Weather_Thunder"
             }
           }
         ]
