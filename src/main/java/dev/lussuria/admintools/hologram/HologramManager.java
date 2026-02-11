@@ -148,6 +148,8 @@ public final class HologramManager {
 
     private void spawnHologramEntities(World world, HologramData hologram) {
         hologram.clearLineEntityRefs();
+        logger.at(Level.INFO).log("[HoloMgr] Spawning hologram '%s' with %d lines at (%.1f, %.1f, %.1f), scale=%.4f",
+            hologram.getName(), hologram.getLines().size(), hologram.getPosX(), hologram.getPosY(), hologram.getPosZ(), defaultScale);
         for (int i = 0; i < hologram.getLines().size(); i++) {
             String lineText = hologram.getLines().get(i);
             double lineY = hologram.getLinePositionY(i);
@@ -155,6 +157,9 @@ public final class HologramManager {
             Ref<EntityStore> ref = HologramSpawner.spawnLine(world, pos, lineText, defaultScale);
             if (ref != null && ref.isValid()) {
                 hologram.getLineEntityRefs().add(ref);
+                logger.at(Level.INFO).log("[HoloMgr] Spawned line %d: '%s' at y=%.1f, ref valid=%b", i, lineText, lineY, ref.isValid());
+            } else {
+                logger.at(Level.WARNING).log("[HoloMgr] Failed to spawn line %d: '%s'", i, lineText);
             }
         }
         hologram.setSpawned(true);

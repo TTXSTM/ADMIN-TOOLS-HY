@@ -3,7 +3,7 @@ $C = "../Common.ui";
 $C.@PageOverlay {}
 
 $C.@Container {
-  Anchor: (Width: 680, Height: 520);
+  Anchor: (Width: 680, Height: 480);
 
   Label #TitleLabel {
     Anchor: (Top: 15, Left: 30, Right: 30);
@@ -31,70 +31,30 @@ $C.@Container {
       }
     }
 
-    Label {
-      Text: "Position:";
-      Style: (RenderBold: true, TextColor: #96a9be);
-      Anchor: (Bottom: 5);
-    }
-
-    Group #PositionControls {
+    Group #PositionSection {
       LayoutMode: Left;
-      Anchor: (Bottom: 10);
+      Anchor: (Height: 38, Bottom: 10);
 
-      Label {
-        Text: "X:";
-        Style: (RenderBold: true, TextColor: #ff6666);
-        Anchor: (Width: 20);
-      }
-      $C.@SmallSecondaryTextButton #XDownButton {
-        @Text = "-";
-        @Anchor = (Width: 28, Height: 28);
-      }
-      $C.@TextField #XInput {
-        @Anchor = (Width: 70, Height: 28);
-      }
-      $C.@SmallSecondaryTextButton #XUpButton {
-        @Text = "+";
-        @Anchor = (Width: 28, Height: 28, Right: 10);
+      Label #PositionLabel {
+        Text: "Position: 0.0, 0.0, 0.0";
+        Style: (TextColor: #96a9be);
+        FlexWeight: 1;
       }
 
-      Label {
-        Text: "Y:";
-        Style: (RenderBold: true, TextColor: #66ff66);
-        Anchor: (Width: 20, Left: 5);
-      }
-      $C.@SmallSecondaryTextButton #YDownButton {
-        @Text = "-";
-        @Anchor = (Width: 28, Height: 28);
-      }
-      $C.@TextField #YInput {
-        @Anchor = (Width: 70, Height: 28);
-      }
-      $C.@SmallSecondaryTextButton #YUpButton {
-        @Text = "+";
-        @Anchor = (Width: 28, Height: 28, Right: 10);
+      $C.@SecondaryTextButton #HeightDownButton {
+        Anchor: (Left: 8, Width: 40);
+        Text: "-";
       }
 
-      Label {
-        Text: "Z:";
-        Style: (RenderBold: true, TextColor: #6666ff);
-        Anchor: (Width: 20, Left: 5);
-      }
-      $C.@SmallSecondaryTextButton #ZDownButton {
-        @Text = "-";
-        @Anchor = (Width: 28, Height: 28);
-      }
-      $C.@TextField #ZInput {
-        @Anchor = (Width: 70, Height: 28);
-      }
-      $C.@SmallSecondaryTextButton #ZUpButton {
-        @Text = "+";
-        @Anchor = (Width: 28, Height: 28);
+      Label #HeightStepLabel {
+        Text: "0.5";
+        Style: (TextColor: #96a9be, Alignment: Center);
+        Anchor: (Left: 4, Width: 40);
       }
 
-      $C.@TertiaryTextButton #SetPositionButton {
-        @Text = "SET";
-        @Anchor = (Width: 80, Left: 10);
+      $C.@SecondaryTextButton #HeightUpButton {
+        Anchor: (Left: 4, Width: 40);
+        Text: "+";
       }
     }
 
@@ -107,47 +67,62 @@ $C.@Container {
     Group #LinesContainer {
       Background: (Color: #0a0f17);
       Anchor: (Height: 150, Bottom: 10);
-      Padding: 5;
+      Padding: 10;
 
-      Group #LinesList {
+      Label #LinesText {
+        Style: (TextColor: #ffffff, FontSize: 14);
         FlexWeight: 1;
-        LayoutMode: TopScrolling;
-        ScrollbarStyle: $C.@DefaultScrollbarStyle;
       }
     }
 
     Group #AddSection {
       LayoutMode: Left;
-      Anchor: (Bottom: 10);
+      Anchor: (Height: 44, Bottom: 5);
 
       $C.@TextField #NewLineInput {
-        @Anchor = (Height: 38);
+        Anchor: (Height: 38);
         FlexWeight: 1;
+        PlaceholderText: "Enter line text...";
       }
 
-      $C.@TertiaryTextButton #AddLineButton {
-        @Text = "ADD";
-        @Anchor = (Left: 8, Width: 100);
+      $C.@TextButton #AddLineButton {
+        Anchor: (Left: 8, Width: 120);
+        Text: "ADD LINE";
+      }
+    }
+
+    Group #RemoveSection {
+      LayoutMode: Left;
+      Anchor: (Height: 44, Bottom: 10);
+
+      $C.@TextField #RemoveLineInput {
+        Anchor: (Height: 38, Width: 80);
+        PlaceholderText: "#";
+      }
+
+      $C.@SecondaryTextButton #RemoveLineButton {
+        Anchor: (Left: 8, Width: 160);
+        Text: "REMOVE LINE";
       }
     }
 
     Group #ButtonSection {
       LayoutMode: Left;
-      Anchor: (Bottom: 15);
+      Anchor: (Height: 44);
 
       $C.@TextButton #MoveHereButton {
-        @Text = "MOVE HERE";
-        @Anchor = (Width: 160);
+        Anchor: (Width: 160);
+        Text: "MOVE HERE";
       }
 
-      $C.@CancelTextButton #DeleteButton {
-        @Text = "DELETE";
-        @Anchor = (Left: 10, Width: 140);
+      $C.@SecondaryTextButton #DeleteButton {
+        Anchor: (Left: 10, Width: 140);
+        Text: "DELETE";
       }
 
       $C.@SecondaryTextButton #ExitButton {
-        @Text = "EXIT";
-        @Anchor = (Left: 10, Width: 120);
+        Anchor: (Left: 10, Width: 120);
+        Text: "EXIT";
       }
     }
   }

@@ -56,11 +56,16 @@ public final class CommandInputUtil {
     }
 
     public static String join(String[] args, int startIndex) {
-        if (args == null || args.length == 0 || startIndex >= args.length) {
+        return join(args, startIndex, args == null ? 0 : args.length);
+    }
+
+    public static String join(String[] args, int startIndex, int endIndex) {
+        if (args == null || args.length == 0 || startIndex >= endIndex) {
             return "";
         }
+        int end = Math.min(endIndex, args.length);
         StringBuilder builder = new StringBuilder();
-        for (int i = startIndex; i < args.length; i++) {
+        for (int i = startIndex; i < end; i++) {
             if (i > startIndex) {
                 builder.append(' ');
             }
