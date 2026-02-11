@@ -35,6 +35,7 @@ import dev.lussuria.admintools.commands.ShowCommand;
 import dev.lussuria.admintools.commands.ShowHologramCommand;
 import dev.lussuria.admintools.commands.ShowTitleCommand;
 import dev.lussuria.admintools.commands.RoleCommand;
+import dev.lussuria.admintools.asset.AssetPackInstaller;
 import dev.lussuria.admintools.config.AdminToolsConfig;
 import dev.lussuria.admintools.hologram.HologramManager;
 import dev.lussuria.admintools.hologram.HologramSpawner;
@@ -82,6 +83,7 @@ public final class AdminToolsPlugin extends JavaPlugin {
     protected void setup() {
         AdminToolsConfig cfg = config.get();
         ensureConfigSaved();
+        AssetPackInstaller.installToMods(getLogger(), getDataDirectory());
         configureInteractionTypes(cfg.customItem);
 
         hologramManager = new HologramManager(getLogger(), getDataDirectory(), cfg.commands.hologramCommands.defaultScale);

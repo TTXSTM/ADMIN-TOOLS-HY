@@ -267,7 +267,7 @@ public final class AdminToolsConfig {
             .build();
 
         public boolean enabled = true;
-        public String itemId = "AdminTools_Lightning_Wand";
+        public String itemId = "AdminTools_Storm_Wand";
         public String metadataKey = "AdminTools.CustomItem";
         public boolean matchItemId = true;
         public boolean matchMetadata = false;

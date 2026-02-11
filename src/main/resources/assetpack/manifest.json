@@ -1,0 +1,20 @@
+{
+  "Group": "dev.lussuria",
+  "Name": "AdminTools Assets",
+  "Version": "1.0.0",
+  "Description": "Asset pack for AdminTools custom item and lightning effect.",
+  "Authors": [
+    {
+      "Name": "wefin",
+      "Email": "",
+      "Url": ""
+    }
+  ],
+  "Website": "",
+  "Dependencies": {},
+  "OptionalDependencies": {},
+  "LoadBefore": {},
+  "DisabledByDefault": false,
+  "IncludesAssetPack": false,
+  "SubPlugins": []
+}
