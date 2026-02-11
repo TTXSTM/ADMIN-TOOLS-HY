@@ -3,12 +3,14 @@ package dev.lussuria.admintools.util;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 
 public final class CommandInputUtil {
     private CommandInputUtil() {
@@ -81,6 +83,47 @@ public final class CommandInputUtil {
         for (PlayerRef ref : world.getPlayerRefs()) {
             if (ref != null && name.equalsIgnoreCase(ref.getUsername())) {
                 return ref;
+            }
+        }
+        return null;
+    }
+
+    public static PlayerRef findOnlinePlayerByName(String name) {
+        if (name == null || name.isBlank()) {
+            return null;
+        }
+        Universe universe = Universe.get();
+        if (universe == null || universe.getWorlds() == null) {
+            return null;
+        }
+        for (World world : universe.getWorlds().values()) {
+            if (world == null) {
+                continue;
+            }
+            PlayerRef ref = findPlayerByName(world, name);
+            if (ref != null) {
+                return ref;
+            }
+        }
+        return null;
+    }
+
+    public static PlayerRef findOnlinePlayerByUuid(UUID uuid) {
+        if (uuid == null) {
+            return null;
+        }
+        Universe universe = Universe.get();
+        if (universe == null || universe.getWorlds() == null) {
+            return null;
+        }
+        for (World world : universe.getWorlds().values()) {
+            if (world == null) {
+                continue;
+            }
+            for (PlayerRef ref : world.getPlayerRefs()) {
+                if (ref != null && uuid.equals(ref.getUuid())) {
+                    return ref;
+                }
             }
         }
         return null;

@@ -21,6 +21,7 @@ public final class RoleManager {
     private final Path dataFile;
     private final Map<UUID, ChatRole> roles = new ConcurrentHashMap<>();
     private final Map<String, UUID> rolesByName = new ConcurrentHashMap<>();
+    private final Map<UUID, UUID> assignedRoleByPlayer = new ConcurrentHashMap<>();
 
     public RoleManager(HytaleLogger logger, Path dataDirectory) {
         this.logger = logger;
@@ -42,6 +43,7 @@ public final class RoleManager {
             return false;
         }
         roles.remove(id);
+        assignedRoleByPlayer.entrySet().removeIf(entry -> id.equals(entry.getValue()));
         return true;
     }
 
@@ -61,9 +63,47 @@ public final class RoleManager {
         return rolesByName.containsKey(name.toLowerCase(Locale.ROOT));
     }
 
+    public boolean assignRole(UUID playerUuid, String roleName) {
+        if (playerUuid == null || roleName == null || roleName.isBlank()) {
+            return false;
+        }
+        ChatRole role = getRole(roleName);
+        if (role == null) {
+            return false;
+        }
+        assignedRoleByPlayer.put(playerUuid, role.getId());
+        return true;
+    }
+
+    public boolean unassignRole(UUID playerUuid) {
+        if (playerUuid == null) {
+            return false;
+        }
+        return assignedRoleByPlayer.remove(playerUuid) != null;
+    }
+
+    public ChatRole getAssignedRole(UUID playerUuid) {
+        if (playerUuid == null) {
+            return null;
+        }
+        UUID roleId = assignedRoleByPlayer.get(playerUuid);
+        if (roleId == null) {
+            return null;
+        }
+        ChatRole role = roles.get(roleId);
+        if (role == null) {
+            assignedRoleByPlayer.remove(playerUuid);
+        }
+        return role;
+    }
+
     // === Role Resolution ===
 
-    public ChatRole resolveRole(Set<String> playerGroups) {
+    public ChatRole resolveRole(UUID playerUuid, Set<String> playerGroups) {
+        ChatRole assigned = getAssignedRole(playerUuid);
+        if (assigned != null) {
+            return assigned;
+        }
         if (playerGroups == null || playerGroups.isEmpty()) {
             return null;
         }
@@ -115,6 +155,19 @@ public final class RoleManager {
                         }
                         writer.write("\"" + escapeJson(r.getGroups().get(i)) + "\"");
                     }
+                    writer.write("],\n");
+                    writer.write("    \"AssignedPlayers\": [");
+                    boolean firstAssigned = true;
+                    for (Map.Entry<UUID, UUID> entry : assignedRoleByPlayer.entrySet()) {
+                        if (!r.getId().equals(entry.getValue())) {
+                            continue;
+                        }
+                        if (!firstAssigned) {
+                            writer.write(", ");
+                        }
+                        firstAssigned = false;
+                        writer.write("\"" + entry.getKey() + "\"");
+                    }
                     writer.write("]\n");
                     writer.write("  }");
                 }
@@ -130,6 +183,9 @@ public final class RoleManager {
             return;
         }
         try {
+            roles.clear();
+            rolesByName.clear();
+            assignedRoleByPlayer.clear();
             String content = Files.readString(dataFile).trim();
             if (content.isEmpty() || content.equals("[]")) {
                 return;
@@ -191,6 +247,15 @@ public final class RoleManager {
 
             roles.put(role.getId(), role);
             rolesByName.put(role.getName().toLowerCase(Locale.ROOT), role.getId());
+
+            List<String> assignedPlayers = extractStringArray(json, "AssignedPlayers");
+            for (String player : assignedPlayers) {
+                try {
+                    assignedRoleByPlayer.put(UUID.fromString(player), role.getId());
+                } catch (IllegalArgumentException ignored) {
+                    // Skip malformed UUIDs from old/bad data.
+                }
+            }
         } catch (Exception e) {
             logger.at(Level.WARNING).log("Failed to parse role entry: %s", e.getMessage());
         }

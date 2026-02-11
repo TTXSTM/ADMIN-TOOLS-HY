@@ -35,6 +35,7 @@ import dev.lussuria.admintools.commands.ShowCommand;
 import dev.lussuria.admintools.commands.ShowHologramCommand;
 import dev.lussuria.admintools.commands.ShowTitleCommand;
 import dev.lussuria.admintools.commands.RoleCommand;
+import dev.lussuria.admintools.asset.AssetPackInstaller;
 import dev.lussuria.admintools.config.AdminToolsConfig;
 import dev.lussuria.admintools.hologram.HologramManager;
 import dev.lussuria.admintools.hologram.HologramSpawner;
@@ -82,6 +83,7 @@ public final class AdminToolsPlugin extends JavaPlugin {
     protected void setup() {
         AdminToolsConfig cfg = config.get();
         ensureConfigSaved();
+        AssetPackInstaller.installToMods(getLogger(), getDataDirectory());
         configureInteractionTypes(cfg.customItem);
 
         hologramManager = new HologramManager(getLogger(), getDataDirectory(), cfg.commands.hologramCommands.defaultScale);
@@ -246,7 +248,7 @@ public final class AdminToolsPlugin extends JavaPlugin {
                 }
             } catch (Exception ignored) {
             }
-            resolved = roleManager.resolveRole(groups);
+            resolved = roleManager.resolveRole(playerRef.getUuid(), groups);
         }
 
         // If a ChatRole was found, build a rich colored message
@@ -351,32 +353,43 @@ public final class AdminToolsPlugin extends JavaPlugin {
             if (playerUuid != null && !joinNotifiedPlayers.add(playerUuid)) {
                 return;
             }
-            Map<String, String> placeholders = Map.of(
-                "player", playerRef.getUsername()
-            );
 
-            Message title = MessageUtil.renderMessage(cfg.joinNotification.title, placeholders, cfg.joinNotification.parseMessages);
-            Message body = MessageUtil.renderMessage(cfg.joinNotification.body, placeholders, cfg.joinNotification.parseMessages);
-            NotificationStyle style = parseNotificationStyle(cfg.joinNotification.style);
-            ItemStack iconStack = buildIconStack(cfg.joinNotification.iconItemId);
+            final String username = playerRef.getUsername();
+            final PlayerRef capturedRef = playerRef;
+            final World world = event.getWorld();
 
-            if (cfg.joinNotification.sendToUniverse) {
-                Store<EntityStore> store = event.getWorld() == null ? null : event.getWorld().getEntityStore().getStore();
-                if (store == null) {
-                    return;
+            // Delay notification so the player's client is fully loaded
+            scheduler.schedule(() -> {
+                try {
+                    Map<String, String> placeholders = Map.of("player", username);
+                    Message title = MessageUtil.renderMessage(cfg.joinNotification.title, placeholders, cfg.joinNotification.parseMessages);
+                    Message body = MessageUtil.renderMessage(cfg.joinNotification.body, placeholders, cfg.joinNotification.parseMessages);
+                    NotificationStyle style = parseNotificationStyle(cfg.joinNotification.style);
+                    ItemStack iconStack = buildIconStack(cfg.joinNotification.iconItemId);
+
+                    if (cfg.joinNotification.sendToUniverse && world != null) {
+                        world.execute(() -> {
+                            Store<EntityStore> store = world.getEntityStore().getStore();
+                            if (store == null) {
+                                return;
+                            }
+                            if (iconStack == null) {
+                                NotificationUtil.sendNotificationToWorld(title, body, null, null, style, store);
+                            } else {
+                                NotificationUtil.sendNotificationToWorld(title, body, null, iconStack.toPacket(), style, store);
+                            }
+                        });
+                    } else {
+                        if (iconStack == null) {
+                            NotificationUtil.sendNotification(capturedRef.getPacketHandler(), title, body, style);
+                        } else {
+                            NotificationUtil.sendNotification(capturedRef.getPacketHandler(), title, body, iconStack.toPacket(), style);
+                        }
+                    }
+                } catch (Exception e) {
+                    getLogger().at(java.util.logging.Level.WARNING).log("Failed to send join notification: " + e.getMessage());
                 }
-                if (iconStack == null) {
-                    NotificationUtil.sendNotificationToWorld(title, body, null, null, style, store);
-                } else {
-                    NotificationUtil.sendNotificationToWorld(title, body, null, iconStack.toPacket(), style, store);
-                }
-            } else {
-                if (iconStack == null) {
-                    NotificationUtil.sendNotification(playerRef.getPacketHandler(), title, body, style);
-                } else {
-                    NotificationUtil.sendNotification(playerRef.getPacketHandler(), title, body, iconStack.toPacket(), style);
-                }
-            }
+            }, 2, TimeUnit.SECONDS);
         });
 
         events.register(PlayerDisconnectEvent.class, event -> {

@@ -267,11 +267,11 @@ public final class AdminToolsConfig {
             .build();
 
         public boolean enabled = true;
-        public String itemId = "AdminTools_Lightning_Wand";
+        public String itemId = "AdminTools_Storm_Wand";
         public String metadataKey = "AdminTools.CustomItem";
         public boolean matchItemId = true;
         public boolean matchMetadata = false;
-        public String[] interactionTypes = new String[] { "Primary" };
+        public String[] interactionTypes = new String[] { "Primary", "Secondary" };
         public String soundEventId = "SFX_Global_Weather_Thunder";
         public String soundCategory = "SFX";
         public float soundVolume = 1.0f;
