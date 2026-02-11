@@ -9,6 +9,7 @@ import dev.lussuria.admintools.role.ChatRole;
 import dev.lussuria.admintools.role.RoleManager;
 import dev.lussuria.admintools.util.CommandInputUtil;
 import dev.lussuria.admintools.util.MessageUtil;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
+import java.util.UUID;
 
 public final class RoleCommand extends AbstractCommand {
     private static final Pattern HEX_COLOR = Pattern.compile("#?[0-9a-fA-F]{6}");
@@ -44,12 +46,15 @@ public final class RoleCommand extends AbstractCommand {
         addSubCommand(new SetPrioritySubCommand(plugin));
         addSubCommand(new SetBoldSubCommand(plugin));
         addSubCommand(new SetItalicSubCommand(plugin));
+        addSubCommand(new AssignSubCommand(plugin));
+        addSubCommand(new UnassignSubCommand(plugin));
+        addSubCommand(new AssignedSubCommand(plugin));
     }
 
     @Override
     protected CompletableFuture<Void> execute(CommandContext context) {
         context.sendMessage(Message.raw(
-            "Usage: /role <create|delete|list|info|setcolor|setprefix|addgroup|removegroup|setpriority|setbold|setitalic>"
+            "Usage: /role <create|delete|list|info|setcolor|setprefix|addgroup|removegroup|setpriority|setbold|setitalic|assign|unassign|assigned>"
         ));
         return CompletableFuture.completedFuture(null);
     }
@@ -66,6 +71,26 @@ public final class RoleCommand extends AbstractCommand {
             return null;
         }
         return color.toLowerCase(Locale.ROOT);
+    }
+
+    private static UUID resolvePlayerUuid(String playerToken) {
+        if (playerToken == null || playerToken.isBlank()) {
+            return null;
+        }
+        try {
+            return UUID.fromString(playerToken);
+        } catch (IllegalArgumentException ignored) {
+            PlayerRef ref = CommandInputUtil.findOnlinePlayerByName(playerToken);
+            return ref == null ? null : ref.getUuid();
+        }
+    }
+
+    private static String resolvePlayerName(UUID playerUuid, String fallback) {
+        PlayerRef ref = CommandInputUtil.findOnlinePlayerByUuid(playerUuid);
+        if (ref != null && ref.getUsername() != null && !ref.getUsername().isBlank()) {
+            return ref.getUsername();
+        }
+        return fallback;
     }
 
     // === Subcommands ===
@@ -465,6 +490,117 @@ public final class RoleCommand extends AbstractCommand {
             role.setItalic(italic);
             manager.save();
             context.sendMessage(Message.raw("Role '" + args[0] + "' italic set to " + italic + "."));
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    static final class AssignSubCommand extends AbstractCommand {
+        private final AdminToolsPlugin plugin;
+
+        AssignSubCommand(AdminToolsPlugin plugin) {
+            super("assign", "Assign a role to a player.");
+            this.plugin = plugin;
+            setAllowsExtraArguments(true);
+        }
+
+        @Override
+        protected CompletableFuture<Void> execute(CommandContext context) {
+            String[] args = CommandInputUtil.extractArgs(context, this);
+            if (args.length < 2) {
+                context.sendMessage(Message.raw("Usage: /role assign <playerName|playerUuid> <roleName>"));
+                return CompletableFuture.completedFuture(null);
+            }
+
+            UUID playerUuid = resolvePlayerUuid(args[0]);
+            if (playerUuid == null) {
+                context.sendMessage(Message.raw("Player '" + args[0] + "' not found online. Use UUID for offline player."));
+                return CompletableFuture.completedFuture(null);
+            }
+
+            RoleManager manager = plugin.getRoleManager();
+            if (!manager.assignRole(playerUuid, args[1])) {
+                context.sendMessage(Message.raw("Role '" + args[1] + "' not found."));
+                return CompletableFuture.completedFuture(null);
+            }
+
+            manager.save();
+            String displayName = resolvePlayerName(playerUuid, args[0]);
+            context.sendMessage(Message.raw("Assigned role '" + args[1] + "' to " + displayName + "."));
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    static final class UnassignSubCommand extends AbstractCommand {
+        private final AdminToolsPlugin plugin;
+
+        UnassignSubCommand(AdminToolsPlugin plugin) {
+            super("unassign", "Remove assigned role from a player.");
+            this.plugin = plugin;
+            setAllowsExtraArguments(true);
+        }
+
+        @Override
+        protected CompletableFuture<Void> execute(CommandContext context) {
+            String[] args = CommandInputUtil.extractArgs(context, this);
+            if (args.length < 1) {
+                context.sendMessage(Message.raw("Usage: /role unassign <playerName|playerUuid>"));
+                return CompletableFuture.completedFuture(null);
+            }
+
+            UUID playerUuid = resolvePlayerUuid(args[0]);
+            if (playerUuid == null) {
+                context.sendMessage(Message.raw("Player '" + args[0] + "' not found online. Use UUID for offline player."));
+                return CompletableFuture.completedFuture(null);
+            }
+
+            RoleManager manager = plugin.getRoleManager();
+            if (!manager.unassignRole(playerUuid)) {
+                context.sendMessage(Message.raw("Player has no assigned role."));
+                return CompletableFuture.completedFuture(null);
+            }
+
+            manager.save();
+            String displayName = resolvePlayerName(playerUuid, args[0]);
+            context.sendMessage(Message.raw("Removed assigned role from " + displayName + "."));
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    static final class AssignedSubCommand extends AbstractCommand {
+        private final AdminToolsPlugin plugin;
+
+        AssignedSubCommand(AdminToolsPlugin plugin) {
+            super("assigned", "Show assigned role of a player.");
+            this.plugin = plugin;
+            setAllowsExtraArguments(true);
+        }
+
+        @Override
+        protected CompletableFuture<Void> execute(CommandContext context) {
+            String[] args = CommandInputUtil.extractArgs(context, this);
+            if (args.length < 1) {
+                context.sendMessage(Message.raw("Usage: /role assigned <playerName|playerUuid>"));
+                return CompletableFuture.completedFuture(null);
+            }
+
+            UUID playerUuid = resolvePlayerUuid(args[0]);
+            if (playerUuid == null) {
+                context.sendMessage(Message.raw("Player '" + args[0] + "' not found online. Use UUID for offline player."));
+                return CompletableFuture.completedFuture(null);
+            }
+
+            RoleManager manager = plugin.getRoleManager();
+            ChatRole role = manager.getAssignedRole(playerUuid);
+            if (role == null) {
+                context.sendMessage(Message.raw("No assigned role for this player."));
+                return CompletableFuture.completedFuture(null);
+            }
+
+            String displayName = resolvePlayerName(playerUuid, args[0]);
+            Message result = Message.raw("Assigned role for " + displayName + ": ");
+            result.insert(MessageUtil.buildRolePreview(role));
+            result.insert(Message.raw(" (" + role.getName() + ")"));
+            context.sendMessage(result);
             return CompletableFuture.completedFuture(null);
         }
     }
