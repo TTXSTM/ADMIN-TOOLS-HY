@@ -2,18 +2,16 @@ package dev.lussuria.admintools.asset;
 
 import com.hypixel.hytale.logger.HytaleLogger;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.logging.Level;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 public final class AssetPackInstaller {
-    private static final String MOD_ARCHIVE_NAME = "lussuria_admintools_asset_pack.zip";
+    private static final String MOD_FOLDER_NAME = "dev.lussuria_AdminTools";
+    private static final String LEGACY_MOD_ARCHIVE_NAME = "lussuria_admintools_asset_pack.zip";
 
     private static final ResourceEntry[] RESOURCE_ENTRIES = new ResourceEntry[] {
         new ResourceEntry("assetpack/manifest.json", "manifest.json"),
@@ -32,46 +30,39 @@ public final class AssetPackInstaller {
     }
 
     public static void installToMods(HytaleLogger logger, Path dataDirectory) {
-        Path tempZip = null;
         try {
             Path modsDirectory = resolveModsDirectory(dataDirectory);
             Files.createDirectories(modsDirectory);
 
-            tempZip = Files.createTempFile(dataDirectory, "admintools-assets-", ".zip");
-            try (ZipOutputStream zip = new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(tempZip)))) {
-                for (ResourceEntry resource : RESOURCE_ENTRIES) {
-                    addResource(zip, resource);
-                }
+            Path destinationRoot = modsDirectory.resolve(MOD_FOLDER_NAME);
+            Files.createDirectories(destinationRoot);
+
+            for (ResourceEntry resource : RESOURCE_ENTRIES) {
+                copyResourceToFile(resource, destinationRoot);
             }
 
-            Path destination = modsDirectory.resolve(MOD_ARCHIVE_NAME);
-            Files.move(tempZip, destination, StandardCopyOption.REPLACE_EXISTING);
-            logger.at(Level.INFO).log("AdminTools asset pack generated at: %s", destination.toAbsolutePath());
+            // Remove old zip artifact from previous implementation.
+            Files.deleteIfExists(modsDirectory.resolve(LEGACY_MOD_ARCHIVE_NAME));
+
+            logger.at(Level.INFO).log("AdminTools assets synced to folder: %s", destinationRoot.toAbsolutePath());
         } catch (Exception e) {
-            logger.at(Level.WARNING).log("Failed to generate AdminTools asset pack: %s", e.getMessage());
-        } finally {
-            if (tempZip != null) {
-                try {
-                    Files.deleteIfExists(tempZip);
-                } catch (IOException ignored) {
-                    // Best-effort cleanup.
-                }
-            }
+            logger.at(Level.WARNING).log("Failed to sync AdminTools asset folder: %s", e.getMessage());
         }
     }
 
-    private static void addResource(ZipOutputStream zip, ResourceEntry resource) throws IOException {
+    private static void copyResourceToFile(ResourceEntry resource, Path destinationRoot) throws IOException {
+        Path destination = destinationRoot.resolve(resource.relativePath);
+        Files.createDirectories(destination.getParent());
+
         try (InputStream in = AssetPackInstaller.class.getClassLoader().getResourceAsStream(resource.sourcePath)) {
             if (in == null) {
                 throw new IOException("Missing bundled asset resource: " + resource.sourcePath);
             }
-            zip.putNextEntry(new ZipEntry(resource.zipEntryPath));
-            in.transferTo(zip);
-            zip.closeEntry();
+            Files.copy(in, destination, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
-    private record ResourceEntry(String sourcePath, String zipEntryPath) {
+    private record ResourceEntry(String sourcePath, String relativePath) {
     }
 
     private static Path resolveModsDirectory(Path dataDirectory) {

@@ -271,7 +271,7 @@ public final class AdminToolsConfig {
         public String metadataKey = "AdminTools.CustomItem";
         public boolean matchItemId = true;
         public boolean matchMetadata = false;
-        public String[] interactionTypes = new String[] { "Primary" };
+        public String[] interactionTypes = new String[] { "Primary", "Secondary" };
         public String soundEventId = "SFX_Global_Weather_Thunder";
         public String soundCategory = "SFX";
         public float soundVolume = 1.0f;
