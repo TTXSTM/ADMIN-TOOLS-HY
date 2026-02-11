@@ -1,6 +1,7 @@
 package dev.lussuria.admintools.util;
 
 import com.hypixel.hytale.server.core.Message;
+import dev.lussuria.admintools.role.ChatRole;
 
 import java.util.Map;
 
@@ -18,6 +19,17 @@ public final class MessageUtil {
         } catch (Exception ex) {
             return Message.raw(text);
         }
+    }
+
+    public static Message buildRolePreview(ChatRole role) {
+        Message msg = Message.raw(role.getDisplayName()).color(role.getColor());
+        if (role.isBold()) {
+            msg = msg.bold(true);
+        }
+        if (role.isItalic()) {
+            msg = msg.italic(true);
+        }
+        return msg;
     }
 
     public static String applyPlaceholders(String template, Map<String, String> placeholders) {

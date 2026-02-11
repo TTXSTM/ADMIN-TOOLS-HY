@@ -4,7 +4,6 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
-import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
@@ -17,7 +16,11 @@ import dev.lussuria.admintools.AdminToolsPlugin;
 import dev.lussuria.admintools.hologram.HologramData;
 import dev.lussuria.admintools.hologram.HologramManager;
 
+import java.util.logging.Level;
+
 public final class HologramEditorPage extends InteractiveCustomUIPage<HologramEditorEventData> {
+    private static final double HEIGHT_STEP = 0.5;
+
     private final AdminToolsPlugin plugin;
     private final String hologramName;
     private final PlayerRef playerRef;
@@ -41,80 +44,52 @@ public final class HologramEditorPage extends InteractiveCustomUIPage<HologramEd
             return;
         }
 
+        plugin.getLogger().at(Level.INFO).log("[HoloEditor] build() for: %s", hologramName);
         commands.append("Pages/HologramEditorPage.ui");
 
         commands.set("#HologramName.Text", hologram.getName());
-        commands.set("#XInput.Value", String.format("%.1f", hologram.getPosX()));
-        commands.set("#YInput.Value", String.format("%.1f", hologram.getPosY()));
-        commands.set("#ZInput.Value", String.format("%.1f", hologram.getPosZ()));
+        commands.set("#PositionLabel.Text", String.format("Position: %.1f, %.1f, %.1f",
+            hologram.getPosX(), hologram.getPosY(), hologram.getPosZ()));
 
-        buildLinesList(hologram, commands, events);
-        bindPositionButtons(events);
-        bindActionButtons(events);
-    }
+        buildLinesList(hologram, commands);
 
-    private void buildLinesList(HologramData hologram, UICommandBuilder commands, UIEventBuilder events) {
-        for (int i = 0; i < hologram.getLines().size(); i++) {
-            String line = hologram.getLines().get(i);
-            String lineItemId = "#Line_" + i;
+        // Simple action buttons
+        bindSimpleAction(events, "#MoveHereButton", "moveHere");
+        bindSimpleAction(events, "#DeleteButton", "delete");
+        bindSimpleAction(events, "#ExitButton", "exit");
+        bindSimpleAction(events, "#HeightUpButton", "heightUp");
+        bindSimpleAction(events, "#HeightDownButton", "heightDown");
 
-            commands.append("#LinesList", "Pages/HologramLineItem.ui");
-            commands.set(lineItemId + " #LineNumber.Text", (i + 1) + ".");
-            commands.set(lineItemId + " #LineText.Text", line);
-
-            events.addEventBinding(
-                CustomUIEventBindingType.Activating,
-                lineItemId + " #LineDeleteButton",
-                new EventData()
-                    .append(HologramEditorEventData.KEY_ACTION, "removeLine")
-                    .append(HologramEditorEventData.KEY_LINE_INDEX, String.valueOf(i)),
-                false
-            );
-        }
-    }
-
-    private void bindPositionButtons(UIEventBuilder events) {
-        bindPositionButton(events, "#XUpButton", "posXUp");
-        bindPositionButton(events, "#XDownButton", "posXDown");
-        bindPositionButton(events, "#YUpButton", "posYUp");
-        bindPositionButton(events, "#YDownButton", "posYDown");
-        bindPositionButton(events, "#ZUpButton", "posZUp");
-        bindPositionButton(events, "#ZDownButton", "posZDown");
-
-        events.addEventBinding(
-            CustomUIEventBindingType.Activating,
-            "#SetPositionButton",
-            new EventData()
-                .append(HologramEditorEventData.KEY_ACTION, "setPosition")
-                .append(HologramEditorEventData.KEY_POS_X, "#XInput.Value")
-                .append(HologramEditorEventData.KEY_POS_Y, "#YInput.Value")
-                .append(HologramEditorEventData.KEY_POS_Z, "#ZInput.Value"),
-            false
-        );
-    }
-
-    private void bindPositionButton(UIEventBuilder events, String buttonId, String action) {
-        events.addEventBinding(
-            CustomUIEventBindingType.Activating,
-            buttonId,
-            EventData.of(HologramEditorEventData.KEY_ACTION, action),
-            false
-        );
-    }
-
-    private void bindActionButtons(UIEventBuilder events) {
+        // Buttons that read text input - same pattern as HydroHologram
         events.addEventBinding(
             CustomUIEventBindingType.Activating,
             "#AddLineButton",
             new EventData()
                 .append(HologramEditorEventData.KEY_ACTION, "addLine")
-                .append(HologramEditorEventData.KEY_NEW_LINE_INPUT, "#NewLineInput.Value"),
+                .append(HologramEditorEventData.KEY_TEXT, "#NewLineInput.Value"),
             false
         );
 
-        bindSimpleAction(events, "#MoveHereButton", "moveHere");
-        bindSimpleAction(events, "#DeleteButton", "delete");
-        bindSimpleAction(events, "#ExitButton", "exit");
+        events.addEventBinding(
+            CustomUIEventBindingType.Activating,
+            "#RemoveLineButton",
+            new EventData()
+                .append(HologramEditorEventData.KEY_ACTION, "removeLine")
+                .append(HologramEditorEventData.KEY_TEXT, "#RemoveLineInput.Value"),
+            false
+        );
+    }
+
+    private void buildLinesList(HologramData hologram, UICommandBuilder commands) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < hologram.getLines().size(); i++) {
+            if (i > 0) sb.append("\n");
+            sb.append(i + 1).append(". ").append(hologram.getLines().get(i));
+        }
+        if (hologram.getLines().isEmpty()) {
+            sb.append("(no lines)");
+        }
+        commands.set("#LinesText.Text", sb.toString());
     }
 
     private void bindSimpleAction(UIEventBuilder events, String buttonId, String action) {
@@ -128,35 +103,56 @@ public final class HologramEditorPage extends InteractiveCustomUIPage<HologramEd
 
     @Override
     public void handleDataEvent(Ref<EntityStore> playerRef, Store<EntityStore> store, HologramEditorEventData data) {
+        plugin.getLogger().at(Level.INFO).log("[HoloEditor] handleDataEvent: %s", data);
         if (data == null || data.getAction() == null || data.getAction().isBlank()) {
+            plugin.getLogger().at(Level.WARNING).log("[HoloEditor] data/action is null");
             return;
         }
+
+        String action = data.getAction();
+        plugin.getLogger().at(Level.INFO).log("[HoloEditor] action=%s, text=%s", action, data.getText());
 
         HologramManager manager = plugin.getHologramManager();
         HologramData hologram = manager.getHologram(hologramName);
         if (hologram == null) {
-            closePage(playerRef, store);
+            close();
             return;
         }
 
-        switch (data.getAction()) {
+        switch (action) {
             case "addLine" -> {
-                String text = data.getNewLineInput();
+                String text = data.getText();
                 if (text != null && !text.isBlank()) {
                     manager.addLine(hologram, text.trim());
                     manager.respawnHologram(hologram);
                     manager.save();
                 }
-                refreshUI(playerRef, store);
+                refreshUI(hologram);
             }
             case "removeLine" -> {
-                int idx = data.getLineIndexInt();
-                if (idx >= 0 && idx < hologram.getLines().size()) {
-                    manager.removeLine(hologram, idx);
-                    manager.respawnHologram(hologram);
-                    manager.save();
+                String text = data.getText();
+                if (text != null && !text.isBlank()) {
+                    try {
+                        int idx = Integer.parseInt(text.trim()) - 1;
+                        if (idx >= 0 && idx < hologram.getLines().size()) {
+                            manager.removeLine(hologram, idx);
+                            manager.respawnHologram(hologram);
+                            manager.save();
+                        }
+                    } catch (NumberFormatException ignored) {
+                    }
                 }
-                refreshUI(playerRef, store);
+                refreshUI(hologram);
+            }
+            case "heightUp" -> {
+                manager.moveHologram(hologram, hologram.getPosX(), hologram.getPosY() + HEIGHT_STEP, hologram.getPosZ());
+                manager.save();
+                refreshUI(hologram);
+            }
+            case "heightDown" -> {
+                manager.moveHologram(hologram, hologram.getPosX(), hologram.getPosY() - HEIGHT_STEP, hologram.getPosZ());
+                manager.save();
+                refreshUI(hologram);
             }
             case "moveHere" -> {
                 TransformComponent transform = store.getComponent(playerRef, TransformComponent.getComponentType());
@@ -165,52 +161,36 @@ public final class HologramEditorPage extends InteractiveCustomUIPage<HologramEd
                     manager.moveHologram(hologram, pos.getX(), pos.getY(), pos.getZ());
                     manager.save();
                 }
-                refreshUI(playerRef, store);
+                refreshUI(hologram);
             }
             case "delete" -> {
                 manager.deleteHologram(hologramName);
                 manager.save();
-                closePage(playerRef, store);
+                close();
             }
-            case "exit" -> closePage(playerRef, store);
-            case "setPosition" -> {
-                double x = data.getPosXDouble(hologram.getPosX());
-                double y = data.getPosYDouble(hologram.getPosY());
-                double z = data.getPosZDouble(hologram.getPosZ());
-                manager.moveHologram(hologram, x, y, z);
-                manager.save();
-                refreshUI(playerRef, store);
-            }
-            case "posXUp" -> adjustAndRefresh(hologram, manager, 1, 0, 0, playerRef, store);
-            case "posXDown" -> adjustAndRefresh(hologram, manager, -1, 0, 0, playerRef, store);
-            case "posYUp" -> adjustAndRefresh(hologram, manager, 0, 1, 0, playerRef, store);
-            case "posYDown" -> adjustAndRefresh(hologram, manager, 0, -1, 0, playerRef, store);
-            case "posZUp" -> adjustAndRefresh(hologram, manager, 0, 0, 1, playerRef, store);
-            case "posZDown" -> adjustAndRefresh(hologram, manager, 0, 0, -1, playerRef, store);
-        }
-    }
-
-    private void adjustAndRefresh(HologramData h, HologramManager m, double dx, double dy, double dz,
-                                  Ref<EntityStore> ref, Store<EntityStore> store) {
-        m.moveHologram(h, h.getPosX() + dx, h.getPosY() + dy, h.getPosZ() + dz);
-        m.save();
-        refreshUI(ref, store);
-    }
-
-    private void refreshUI(Ref<EntityStore> playerRef, Store<EntityStore> store) {
-        Player player = store.getComponent(playerRef, Player.getComponentType());
-        if (player != null) {
-            HologramData hologram = plugin.getHologramManager().getHologram(hologramName);
-            if (hologram != null) {
-                player.getPageManager().openCustomPage(
-                    playerRef, store,
-                    new HologramEditorPage(this.playerRef, plugin, hologram)
-                );
+            case "exit" -> {
+                plugin.getLogger().at(Level.INFO).log("[HoloEditor] closing page");
+                close();
             }
         }
     }
 
-    private void closePage(Ref<EntityStore> playerRef, Store<EntityStore> store) {
-        close();
+    /**
+     * In-place UI refresh using sendUpdate() - matches HydroHologram's approach.
+     * Does NOT close and reopen the page.
+     */
+    private void refreshUI(HologramData hologram) {
+        plugin.getLogger().at(Level.INFO).log("[HoloEditor] refreshUI via sendUpdate");
+        UICommandBuilder commands = new UICommandBuilder();
+        UIEventBuilder events = new UIEventBuilder();
+
+        commands.set("#PositionLabel.Text", String.format("Position: %.1f, %.1f, %.1f",
+            hologram.getPosX(), hologram.getPosY(), hologram.getPosZ()));
+        commands.set("#NewLineInput.Value", "");
+        commands.set("#RemoveLineInput.Value", "");
+
+        buildLinesList(hologram, commands);
+
+        sendUpdate(commands, events, false);
     }
 }

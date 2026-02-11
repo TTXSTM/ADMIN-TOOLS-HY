@@ -29,6 +29,7 @@ public final class AdminToolsConfig {
             .addField(new KeyedCodec<>("ShowHologram", ShowHologram.CODEC), (c, v) -> c.showHologram = v, c -> c.showHologram)
             .addField(new KeyedCodec<>("OpenUi", OpenUi.CODEC), (c, v) -> c.openUi = v, c -> c.openUi)
             .addField(new KeyedCodec<>("HologramCommands", HologramCommands.CODEC), (c, v) -> c.hologramCommands = v, c -> c.hologramCommands)
+            .addField(new KeyedCodec<>("RoleCommands", RoleCommands.CODEC), (c, v) -> c.roleCommands = v, c -> c.roleCommands)
             .build();
 
         public ShowRoot showRoot = new ShowRoot();
@@ -37,6 +38,7 @@ public final class AdminToolsConfig {
         public ShowHologram showHologram = new ShowHologram();
         public OpenUi openUi = new OpenUi();
         public HologramCommands hologramCommands = new HologramCommands();
+        public RoleCommands roleCommands = new RoleCommands();
     }
 
     public static final class ShowRoot {
@@ -132,7 +134,7 @@ public final class AdminToolsConfig {
         public String permission = "admintools.command.show.hologram";
         public String text = "AdminTools Hologram";
         public float heightOffset = 2.0f;
-        public float scale = 0.01f;
+        public float scale = 1.0f;
         public float durationSeconds = 10.0f;
         public boolean parseMessages = true;
     }
@@ -153,6 +155,22 @@ public final class AdminToolsConfig {
         public String permission = "admintools.command.openui";
     }
 
+    public static final class RoleCommands {
+        public static final BuilderCodec<RoleCommands> CODEC = BuilderCodec.builder(RoleCommands.class, RoleCommands::new)
+            .addField(new KeyedCodec<>("Enabled", Codec.BOOLEAN), (c, v) -> c.enabled = v, c -> c.enabled)
+            .addField(new KeyedCodec<>("Name", Codec.STRING), (c, v) -> c.name = v, c -> c.name)
+            .addField(new KeyedCodec<>("Aliases", Codec.STRING_ARRAY), (c, v) -> c.aliases = v, c -> c.aliases)
+            .addField(new KeyedCodec<>("Description", Codec.STRING), (c, v) -> c.description = v, c -> c.description)
+            .addField(new KeyedCodec<>("Permission", Codec.STRING), (c, v) -> c.permission = v, c -> c.permission)
+            .build();
+
+        public boolean enabled = true;
+        public String name = "role";
+        public String[] aliases = new String[] { "chatrole" };
+        public String description = "Manage chat roles.";
+        public String permission = "admintools.command.role";
+    }
+
     public static final class HologramCommands {
         public static final BuilderCodec<HologramCommands> CODEC = BuilderCodec.builder(HologramCommands.class, HologramCommands::new)
             .addField(new KeyedCodec<>("Enabled", Codec.BOOLEAN), (c, v) -> c.enabled = v, c -> c.enabled)
@@ -170,7 +188,7 @@ public final class AdminToolsConfig {
         public String description = "Manage persistent holograms.";
         public String permission = "admintools.command.holo";
         public float defaultLineSpacing = 0.25f;
-        public float defaultScale = 0.01f;
+        public float defaultScale = 1.0f;
     }
 
     public static final class Chat {
@@ -183,6 +201,9 @@ public final class AdminToolsConfig {
             .addField(new KeyedCodec<>("UseGroupNameIfNoMapping", Codec.BOOLEAN), (c, v) -> c.useGroupNameIfNoMapping = v, c -> c.useGroupNameIfNoMapping)
             .addField(new KeyedCodec<>("RolePriority", Codec.STRING_ARRAY), (c, v) -> c.rolePriority = v, c -> c.rolePriority)
             .addField(new KeyedCodec<>("RoleMappings", Codec.STRING_ARRAY), (c, v) -> c.roleMappings = v, c -> c.roleMappings)
+            .addField(new KeyedCodec<>("NameColor", Codec.STRING), (c, v) -> c.nameColor = v, c -> c.nameColor)
+            .addField(new KeyedCodec<>("MessageColor", Codec.STRING), (c, v) -> c.messageColor = v, c -> c.messageColor)
+            .addField(new KeyedCodec<>("SeparatorColor", Codec.STRING), (c, v) -> c.separatorColor = v, c -> c.separatorColor)
             .build();
 
         public boolean enabled = true;
@@ -199,6 +220,9 @@ public final class AdminToolsConfig {
             "Mod=[Mod]",
             "Default=[Player]"
         };
+        public String nameColor = "#ffffff";
+        public String messageColor = "#aaaaaa";
+        public String separatorColor = "#555555";
     }
 
     public static final class JoinNotification {

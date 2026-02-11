@@ -34,9 +34,12 @@ import dev.lussuria.admintools.commands.OpenUiCommand;
 import dev.lussuria.admintools.commands.ShowCommand;
 import dev.lussuria.admintools.commands.ShowHologramCommand;
 import dev.lussuria.admintools.commands.ShowTitleCommand;
+import dev.lussuria.admintools.commands.RoleCommand;
 import dev.lussuria.admintools.config.AdminToolsConfig;
 import dev.lussuria.admintools.hologram.HologramManager;
 import dev.lussuria.admintools.hologram.HologramSpawner;
+import dev.lussuria.admintools.role.ChatRole;
+import dev.lussuria.admintools.role.RoleManager;
 import dev.lussuria.admintools.util.MessageUtil;
 
 import java.nio.file.Files;
@@ -63,6 +66,7 @@ public final class AdminToolsPlugin extends JavaPlugin {
     private final Set<UUID> joinNotifiedPlayers = ConcurrentHashMap.newKeySet();
     private final EnumSet<InteractionType> allowedInteractionTypes = EnumSet.noneOf(InteractionType.class);
     private HologramManager hologramManager;
+    private RoleManager roleManager;
 
     public AdminToolsPlugin(JavaPluginInit init) {
         super(init);
@@ -83,6 +87,9 @@ public final class AdminToolsPlugin extends JavaPlugin {
         hologramManager = new HologramManager(getLogger(), getDataDirectory(), cfg.commands.hologramCommands.defaultScale);
         hologramManager.load();
 
+        roleManager = new RoleManager(getLogger(), getDataDirectory());
+        roleManager.load();
+
         registerCommands(cfg);
         registerEvents(cfg);
 
@@ -96,6 +103,9 @@ public final class AdminToolsPlugin extends JavaPlugin {
             hologramManager.despawnAllHolograms();
             hologramManager.save();
         }
+        if (roleManager != null) {
+            roleManager.save();
+        }
         cleanupHolograms();
     }
 
@@ -105,6 +115,10 @@ public final class AdminToolsPlugin extends JavaPlugin {
 
     public HologramManager getHologramManager() {
         return hologramManager;
+    }
+
+    public RoleManager getRoleManager() {
+        return roleManager;
     }
 
     private void ensureConfigSaved() {
@@ -220,6 +234,63 @@ public final class AdminToolsPlugin extends JavaPlugin {
         return result;
     }
 
+    private Message buildChatMessage(PlayerRef playerRef, String content, AdminToolsConfig.Chat chat) {
+        // Try dynamic roles first
+        ChatRole resolved = null;
+        if (chat.includeRole && roleManager != null && playerRef != null && playerRef.getUuid() != null) {
+            Set<String> groups = null;
+            try {
+                PermissionsModule permissions = PermissionsModule.get();
+                if (permissions != null) {
+                    groups = permissions.getGroupsForUser(playerRef.getUuid());
+                }
+            } catch (Exception ignored) {
+            }
+            resolved = roleManager.resolveRole(groups);
+        }
+
+        // If a ChatRole was found, build a rich colored message
+        if (resolved != null) {
+            Message result = Message.empty();
+
+            Message roleMsg = Message.raw(resolved.getDisplayName() + " ").color(resolved.getColor());
+            if (resolved.isBold()) {
+                roleMsg = roleMsg.bold(true);
+            }
+            if (resolved.isItalic()) {
+                roleMsg = roleMsg.italic(true);
+            }
+            result.insert(roleMsg);
+
+            result.insert(Message.raw(playerRef.getUsername()).color(chat.nameColor));
+            result.insert(Message.raw(" >> ").color(chat.separatorColor));
+
+            Message contentMsg;
+            if (chat.parseMessages) {
+                try {
+                    contentMsg = Message.parse(content);
+                } catch (Exception e) {
+                    contentMsg = Message.raw(content);
+                }
+            } else {
+                contentMsg = Message.raw(content);
+            }
+            contentMsg = contentMsg.color(chat.messageColor);
+            result.insert(contentMsg);
+
+            return result;
+        }
+
+        // Fallback to legacy format string
+        String role = resolveRoleForPlayer(playerRef, chat);
+        Map<String, String> placeholders = Map.of(
+            "player", playerRef.getUsername(),
+            "message", content,
+            "role", role == null ? "" : role
+        );
+        return MessageUtil.renderMessage(chat.format, placeholders, chat.parseMessages);
+    }
+
     private void registerCommands(AdminToolsConfig cfg) {
         CommandRegistry commands = getCommandRegistry();
 
@@ -245,6 +316,10 @@ public final class AdminToolsPlugin extends JavaPlugin {
         if (cfg.commands.hologramCommands.enabled) {
             commands.registerCommand(new HologramCommand(this, cfg.commands.hologramCommands));
         }
+
+        if (cfg.commands.roleCommands.enabled) {
+            commands.registerCommand(new RoleCommand(this, cfg.commands.roleCommands));
+        }
     }
 
     private void registerEvents(AdminToolsConfig cfg) {
@@ -255,15 +330,7 @@ public final class AdminToolsPlugin extends JavaPlugin {
                 if (!cfg.chat.enabled) {
                     return event;
                 }
-                event.setFormatter((playerRef, content) -> {
-                    String role = resolveRoleForPlayer(playerRef, cfg.chat);
-                    Map<String, String> placeholders = Map.of(
-                        "player", playerRef.getUsername(),
-                        "message", content,
-                        "role", role == null ? "" : role
-                    );
-                    return MessageUtil.renderMessage(cfg.chat.format, placeholders, cfg.chat.parseMessages);
-                });
+                event.setFormatter((playerRef, content) -> buildChatMessage(playerRef, content, cfg.chat));
                 return event;
             })
         );

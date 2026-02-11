@@ -8,7 +8,6 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.entity.nameplate.Nameplate;
-import com.hypixel.hytale.server.core.modules.entity.EntityModule;
 import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.Intangible;
 import com.hypixel.hytale.server.core.entity.entities.ProjectileComponent;
@@ -29,6 +28,7 @@ public final class HologramSpawner {
     /**
      * Spawn a single hologram line entity at the given position.
      * Must be called on the world thread.
+     * Matches HydroHologram's exact spawning recipe for text lines.
      */
     public static Ref<EntityStore> spawnLine(World world, Vector3d position, String text, float scale) {
         EntityStore entityStore = world.getEntityStore();
@@ -36,34 +36,40 @@ public final class HologramSpawner {
 
         Holder<EntityStore> holder = EntityStore.REGISTRY.newHolder();
 
+        // 1. TransformComponent - position + zero rotation
         holder.putComponent(TransformComponent.getComponentType(),
             new TransformComponent(position, ZERO_ROTATION));
 
-        holder.ensureComponent(ProjectileComponent.getComponentType());
-
-        holder.putComponent(Intangible.getComponentType(), Intangible.INSTANCE);
-
-        // Required for the nameplate tracker update (NameplateSystems) to publish changes to clients.
-        holder.ensureComponent(EntityModule.get().getVisibleComponentType());
-
-        holder.addComponent(Nameplate.getComponentType(), new Nameplate(text));
-
-        if (scale > 0f) {
-            holder.addComponent(EntityScaleComponent.getComponentType(),
-                new EntityScaleComponent(scale));
+        // 2. ProjectileComponent with "Projectile" archetype (CRITICAL for visibility)
+        ProjectileComponent projComp = new ProjectileComponent("Projectile");
+        holder.putComponent(ProjectileComponent.getComponentType(), projComp);
+        if (projComp.getProjectile() == null) {
+            projComp.initialize();
         }
 
+        // 3. Intangible marker
+        holder.ensureComponent(Intangible.getComponentType());
+
+        // 4. Nameplate with text
+        holder.addComponent(Nameplate.getComponentType(), new Nameplate(text));
+
+        // 5. EntityScaleComponent
+        holder.addComponent(EntityScaleComponent.getComponentType(),
+            new EntityScaleComponent(scale));
+
+        // 6. NetworkId (required for client visibility)
         holder.addComponent(NetworkId.getComponentType(),
             new NetworkId(entityStore.takeNextNetworkId()));
 
-        UUID entityUuid = UUID.randomUUID();
+        // 7. UUIDComponent
         holder.addComponent(UUIDComponent.getComponentType(),
-            new UUIDComponent(entityUuid));
+            new UUIDComponent(UUID.randomUUID()));
 
+        // 8. NonSerialized marker
         holder.ensureComponent(EntityStore.REGISTRY.getNonSerializedComponentType());
 
-        Ref<EntityStore> ref = store.addEntity(holder, AddReason.SPAWN);
-        return ref;
+        // Spawn entity
+        return store.addEntity(holder, AddReason.SPAWN);
     }
 
     /**
