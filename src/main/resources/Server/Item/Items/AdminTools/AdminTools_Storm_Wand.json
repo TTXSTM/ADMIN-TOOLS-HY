@@ -4,7 +4,7 @@
     "Description": "items.AdminTools_Storm_Wand.description"
   },
   "Id": "AdminTools_Storm_Wand",
-  "Icon": "Icons/ItemsGenerated/Deco_Orbis_Trophy.png",
+  "Icon": "Icons/ItemsGenerated/valentine_lantern_floor.png",
   "Categories": [
     "Blocks.Deco"
   ],
@@ -16,14 +16,14 @@
     "Material": "Solid",
     "DrawType": "Model",
     "Opacity": "Transparent",
-    "CustomModel": "Blocks/Miscellaneous/Kweebec_Plush.blockymodel",
+    "CustomModel": "Blocks/valentine_lantern_floor/valentine_lantern_floor.blockymodel",
     "CustomModelTexture": [
       {
-        "Texture": "Blocks/Miscellaneous/Kweebec_Plush_Texture.png",
+        "Texture": "BlockTextures/valentine_lantern_floor.png",
         "Weight": 1
       }
     ],
-    "CustomModelScale": 0.85,
+    "CustomModelScale": 1.0,
     "Group": "Wood",
     "HitboxType": "Plant_Large",
     "VariantRotation": "NESW",
@@ -95,8 +95,8 @@
     }
   },
   "PlayerAnimationsId": "Block",
-  "Model": "Blocks/Miscellaneous/Kweebec_Plush.blockymodel",
-  "Texture": "Blocks/Miscellaneous/Kweebec_Plush_Texture.png",
+  "Model": "Blocks/valentine_lantern_floor/valentine_lantern_floor.blockymodel",
+  "Texture": "BlockTextures/valentine_lantern_floor.png",
   "IconProperties": {
     "Scale": 0.685,
     "Rotation": [
